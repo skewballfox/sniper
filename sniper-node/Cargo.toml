@@ -1,0 +1,27 @@
+[package]
+name = "sniper-node"
+version = "0.1.0"
+authors = ["Joshua Ferguson <joshua.ferguson.273@gmail.com>"]
+license = "Apache-2.0"
+build = "build.rs"
+edition = "2018"
+exclude = ["artifacts.json", "index.node"]
+
+[lib]
+name = "sniper_node"
+crate-type = ["cdylib"]
+
+[build-dependencies]
+neon-build = "0.8.0"
+#itertools = "0.9.0"
+#proc-macro2 = "1.0.24"
+#syn = {version="1.0.46",features=["full"]}
+#walkdir = "2.3.1"
+
+[dependencies]
+sniper-core = { git = "https://github.com/skewballfox/Sniper-Core", branch="main" }
+
+[dependencies.neon]
+version = "0.8.0"
+default-features = false
+features = ["napi-4"]
