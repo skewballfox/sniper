@@ -60,5 +60,5 @@ fn no_action() -> Vec<Actions> {
 #[derive(Deserialize, Clone, Debug)]
 pub struct Loader {
     #[serde(flatten, with = "tuple_vec_map")]
-    snippets: Vec<(String, Snippet)>,
+    pub snippets: Vec<(String, Snippet)>,
 }
