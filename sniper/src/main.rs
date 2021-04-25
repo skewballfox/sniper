@@ -7,7 +7,7 @@ mod snippet;
 
 
 fn main() {
-    //let mut targ=target::Target::new("12345","test.py","python");
+    //let config=config::ConfigLoader();
     let mut sniper_session=sniper::Sniper::new();
     sniper_session.add_target("12345","test.py","python");
     

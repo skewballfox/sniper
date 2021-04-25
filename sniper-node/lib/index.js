@@ -3,11 +3,12 @@ import addon, { startSniper } from '../index.node';
 
 //const { Sniper } = addon;
 class Sniper {
-    constructor(config) {
-        this.boxed = startSniper(config);
+    constructor() {
+        this.session = startSniper();
     }
+    //TODO: define api
 }
-let x = new Sniper("snippets");
+let x = new Sniper();
 
 console.log(x)
 console.log(typeof (x));

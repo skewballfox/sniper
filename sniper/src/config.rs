@@ -5,19 +5,23 @@ use std::fs;
 use std::path::PathBuf;
 use serde::Deserialize;
 
-use std::collections::HashMap;
+use std::collections::{HashMap,HashSet};
 use std::vec::Vec;
 
+///This crate serves two purposes:
+/// 1. store configuration settings and paths
+/// 2. handle path based functionality
 #[derive(Debug)]
-pub struct SniperConfig {
-    config_path: PathBuf,
-    
-    languages: HashMap<String,LanguageConfig>,
+pub(crate) struct SniperConfig {
+    config_path: PathBuf,   
+    pub(crate) languages: HashMap<String,LanguageConfig>,
 
 }
 #[derive(Deserialize, Clone, Debug)]
-struct LanguageConfig {
-    base_snippets: Vec<String>,
+pub(crate) struct LanguageConfig {
+    pub(crate) base_snippets: Vec<String>,
+    #[serde(default="HashSet::new")]
+    pub(crate) loaded_snippets: HashSet<String>,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -27,25 +31,24 @@ struct Loader {
 }
 
 
-
-
-pub fn ConfigLoader()-> SniperConfig {
-    
-    let mut config = SniperConfig::new();
-    config.load_config();
-    config
-}
-
 impl SniperConfig {
-    pub fn new() -> SniperConfig {
-        SniperConfig {
-            config_path: BaseDirs::new().unwrap().config_dir().join(PathBuf::from(&"sniper")), 
-            languages: HashMap::new(),
+    pub fn new() -> Self {
+        let path= BaseDirs::new().unwrap().config_dir().join(PathBuf::from(&"sniper"));
+        let toml_file = &path.join("config.toml");
+        println!("{:?}",toml_file);
+        
+        println!("config file loaded: {:?}", toml_file);
+        let toml_data = fs::read_to_string(&toml_file).expect("failed to load file");
+        let temp: Loader=toml::from_str(&toml_data).unwrap();
+        
+        Self {
+            config_path: PathBuf::from(path), 
+            languages: temp.language_settings,
             
         }
         
     }
-    pub fn load_config<'a>(&'a mut self) -> &'a mut SniperConfig {
+    fn load_config(&mut self){
         let toml_file = self.config_path.join("config.toml");
         println!("{:?}",toml_file);
         if toml_file.is_file(){
@@ -56,25 +59,22 @@ impl SniperConfig {
         }else {
                 println!("check the path: {:?}", toml_file);
         }
-        self
+    }
+    
+    
+    pub fn get_snippet_data(&self, language: &str, snippet_set: &str)->String{
+            
+        //TODO: actually handle errors in this function
+        //its likely to actually generate them    
+        let snip_path=self.config_path.to_str().unwrap().to_owned()+"/"+language+&"/"+snippet_set+&".toml";
+        println!("{:?}",snip_path);
+        fs::read_to_string(&snip_path).unwrap()
+    
+        
     }
 
-    pub fn get_base_snippets_path(self,language: &str)->Option<Vec<String>>{
-        //if let Some(snippet_sets)= self.languages[language].base_snippets{
-            if self.languages.contains_key(language){
-                let snip_sets=self.languages[language].base_snippets;
-                let mut snip_data: Vec<String> =Vec::with_capacity(snip_sets.len());
-                
-                for (i, snip_set) in snip_sets.iter().enumerate(){
-                    let snip_path=self.config_path.to_str().unwrap().to_owned()+&"/snippets/"+language+snip_set+&".toml";
-                    snip_data.push(fs::read_to_string(&snip_path).unwrap());
-                    
-                }
-                Some(snip_data)
-            }else{
-                None
-            }
-        //}
+    pub fn added_snippets(&mut self, language:&str, snippet_set: String){
+        self.languages[language].loaded_snippets.insert(snippet_set);
     }
 
 }

@@ -8,10 +8,10 @@ struct SniperNode {
 }
 impl Finalize for SniperNode {}
 
-use std::os::unix::net::UnixStream;
 
 
-fn start_sniper(mut cx: FunctionContext) -> JsResult<SniperNode> {
+
+fn start_sniper(mut cx: FunctionContext) {//-> JsResult<SniperNode> {
     ///either connect to existing sniper session or start sniper session
     println!('todo');
     let language = cx.argument::<JsString>(1).unwrap().value(&mut cx);
@@ -24,15 +24,23 @@ fn start_sniper(mut cx: FunctionContext) -> JsResult<SniperNode> {
     } else {
         spin_up_server(&input);
     }
-};
+}
     //let config_path = cx.argument::<JsString>(0)?.value(&mut cx);
     //Ok(cx.boxed(SniperNode { sniper:Sniper::new(&config_path) }))
 
+///adds a target to sniperSession
+/// returns triggers?
+fn add_target(mut cx: FunctionContext){
+    println!("todo");
+}
 
+///gets a snippet if available, otherwise does nothing
 fn get_snippet(mut cx: FunctionContext) -> JsResult<JsString> {
     ///once snippet has been matched, get snippet from sniper
     println!('todo');
 }
+
+
 
 
 register_module!(mut m, {

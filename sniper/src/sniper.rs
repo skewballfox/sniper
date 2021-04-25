@@ -1,26 +1,25 @@
-use crate::config::{ConfigLoader,SniperConfig};
+use crate::config::SniperConfig;
 use crate::target::Target;
 use crate::snippet::{Snippet,SnippetSets,Loader};
 
 use dashmap::DashMap;
 use rayon::prelude::*;
-use std::collections::{HashMap,HashSet};
-use std::vec::Vec;
+use std::collections::HashSet;
+
 
 #[derive(Debug)]
-pub struct Sniper<'a> {
-    //TODO: since config is now static, switch to passing sessions
-    config: &'a SniperConfig,
-    //
+pub struct Sniper {
+ 
+    config: SniperConfig,
     targets: HashSet<Target>,
     snippets: DashMap<String,Snippet>,
     snippet_sets: HashSet<SnippetSets>,
 }
 
-impl Sniper<'_> {
+impl Sniper {
     pub fn new() -> Self {
         Self {
-            config: SniperConfig::new().load_config(),
+            config: SniperConfig::new(),
             targets: HashSet::new(),
             snippets: DashMap::new(), 
             snippet_sets: HashSet::new(),
@@ -35,16 +34,13 @@ impl Sniper<'_> {
     }
     /// load snippets from file
     fn load_snippets(&mut self, snippet_data: &str){
-        println!("{:?}",snippet_data);
-        
-        println!("snippet data loaded: {:?}", snippet_data);
+    
         
         let temp: Loader=toml::from_str(&snippet_data).unwrap();
         for pair in temp.snippets.iter(){
-            self.snippets.insert(pair.0,pair.1);
+            self.snippets.insert(pair.0.to_owned(),pair.1.to_owned());
         }
         
-        println!("todo");
     }
     /// drop a snippet set
     fn drop_snippets(&mut self) {
@@ -55,20 +51,20 @@ impl Sniper<'_> {
     /// add a session to the list of currently tracked sessions
     pub fn add_target(&mut self, session_id: &str,uri: &str, language: &str){
 
-        //NOTE: Leaving off here, and in get base snippet path in config.rs
-        //this solution is bad and you should feel bad
-        if self.snippet_sets.is_empty(){//TODO: figure out what to do about partial matches
-            if let Some(snippet_files)=self.config.get_base_snippets_path(&language){
-                for snippet_file in snippet_files.iter(){
-                    self.load_snippets(&snippet_file);
+        if self.config.languages.contains_key(language) {
+            if self.config.languages[language].loaded_snippets.is_empty() {
+                for snippet_set in self.config.languages[language].base_snippets.iter(){
+         
+                    //NOTE: in future need to handle error, where base snippets
+                    //defined in config isn't found (in appropriate directory)
+                    let snippet_data= self.config.get_snippet_data(language,snippet_set);
+                    self.load_snippets(&snippet_data);
+                    self.config.added_snippets(language,snippet_set.to_string());  
                 }
-
-
             }
         }
         let target=Target::new(&session_id,&uri,&language);
         self.targets.insert(target);
-    
     }
 
     //fn update_target(&mut self)
