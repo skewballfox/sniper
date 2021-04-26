@@ -2,7 +2,7 @@
 use std::collections::HashSet;
 use std::rc;
 use serde::Deserialize;
-//these are the currently supported actions for snippets
+//these are the currently (planned) supported actions for snippets
 #[derive(Deserialize, Clone, Debug)]
 #[serde(tag = "action", content = "args")]
 pub enum Actions {
@@ -55,12 +55,12 @@ pub struct Loader {
     pub(crate) snippets: Vec<(String, Snippet)>,
 }
 
+/// tracks the set each group of snippets belong to, as well as
+/// which targets require them
 #[derive(Debug)]
 pub struct SnippetSet {
-    /// tracks the set each group of snippets belong to, as well as
-    /// which targets require them
+    
     pub(crate) contents: Vec<String>,
-    //TODO: may want to add methods on all structs using weak to occasionally clean references
     target_counter: i32,
 }
 

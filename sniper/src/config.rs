@@ -1,5 +1,3 @@
-
-
 use directories::BaseDirs;
 use std::fs;
 use std::path::PathBuf;
@@ -37,28 +35,6 @@ pub struct SnippetSet {
     target_counter: i32,
 }
 
-impl SnippetSet {
-    fn new(contents: Vec<String>)->Self {
-        Self {
-            contents,
-            target_counter: 1,
-        }
-    }
-    pub fn added_target(&mut self){
-        self.target_counter+=1;
-    }
-
-    pub fn dropped_target(&mut self)->bool{
-        if self.target_counter>1{
-            self.target_counter-=1;
-            false
-        } else {
-            true
-        }
-    }
-
-}
-
 #[derive(Deserialize, Clone, Debug)]
 struct Loader {
     #[serde(rename="settings",flatten)]
@@ -82,22 +58,7 @@ impl SniperConfig {
         }
         
     }
-    /*
-    fn load_config(&mut self){
-        let toml_file = self.config_path.join("config.toml");
-        println!("{:?}",toml_file);
-        if toml_file.is_file(){
-            println!("config file loaded: {:?}", toml_file);
-            let toml_data = fs::read_to_string(&toml_file).expect("failed to load file");
-            let temp: Loader=toml::from_str(&toml_data).unwrap();
-            self.languages=temp.language_settings;
-        }else {
-                println!("check the path: {:?}", toml_file);
-        }
-    }
-    */
-    
-    
+   
     pub fn get_snippet_data(&self, language: &str, snippet_set: &str)->String{
           
         //TODO: actually handle errors in this function
@@ -114,4 +75,3 @@ impl SniperConfig {
     }
 
 }
-
