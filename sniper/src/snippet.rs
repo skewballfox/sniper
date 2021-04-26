@@ -56,7 +56,8 @@ pub struct Loader {
 }
 
 /// tracks the set each group of snippets belong to, as well as
-/// which targets require them
+/// how many targets require them, used to determine whether it's necessary
+/// to add or drop a group of snippets
 #[derive(Debug)]
 pub struct SnippetSet {
     
@@ -71,10 +72,14 @@ impl SnippetSet {
             target_counter: 1,
         }
     }
+
     pub fn added_target(&mut self){
         self.target_counter+=1;
     }
 
+    ///this is ran when a dropping a target, the returned boolean is used to
+    /// determine if the snippets associated with this snippet set need to be 
+    /// dropped
     pub fn decrement_target(&mut self)->bool{
         if self.target_counter>1{
             self.target_counter-=1;

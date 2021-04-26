@@ -32,6 +32,9 @@ impl Sniper {
         println!("todo");
         //return snippets[snippet].body;
     }
+    
+    //pub fn add_snippets()
+    
     /// load snippets from file
     fn load_snippets(&mut self,language: &str,snip_set_name: &str, snippet_data: &str){
     
@@ -46,12 +49,12 @@ impl Sniper {
         self.snippet_sets.insert((language.to_string(),snip_set_name.to_string()),SnippetSet::new(snippet_set));
         
     }
-    /// drop a snippet set
+    
+    /// drop snippets tied to a given snippet set
     fn drop_snippets(&mut self, language: &str, snip_set_to_drop: String) {
         for snippet_key in self.snippet_sets[&(language.to_string(),snip_set_to_drop)].contents.iter(){
             self.snippets.remove(&(language.to_string(),snippet_key.to_string()));
         }
-        println!("todo");
     }
 
     /// add a session to the list of currently tracked sessions
@@ -70,6 +73,10 @@ impl Sniper {
 
                 }
                 self.config.language_initialized(language);
+            } else {//the base sets for this language have already been loaded
+                for snippet_set in self.config.languages[language].base_snippets.clone().iter(){
+                    self.snippet_sets.get_mut(&(language.to_string(),snippet_set.to_string())).unwrap().increment_target();
+                }
             }
             self.targets.insert((session_id.to_string(),uri.to_string()),target_data);
             //should only track a target if it is in a supported language
@@ -78,7 +85,9 @@ impl Sniper {
             
         }
     }
+    
     //fn update_target(&mut self, )
+    
     //fn add_snippet_set(&mut self)
        
         
