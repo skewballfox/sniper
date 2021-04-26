@@ -9,7 +9,8 @@ struct SniperNode {
 impl Finalize for SniperNode {}
 
 use std::os::unix::net::UnixStream;
-
+//TODO: needs some kind of target blacklist for situation
+//where target isn't viable
 
 fn start_sniper(mut cx: FunctionContext) -> JsResult<SniperNode> {
     ///either connect to existing sniper session or start sniper session

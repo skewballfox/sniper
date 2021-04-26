@@ -1,4 +1,4 @@
-use crate::target::Target;
+
 use std::collections::HashSet;
 use std::rc;
 use serde::Deserialize;
@@ -21,14 +21,6 @@ pub enum SnippetTypes {
     Template,
 }
 
-#[derive(Debug)]
-pub struct SnippetSets {
-    /// tracks the set each group of snippets belong to, as well as
-    /// which targets require them
-    snippets: Vec<String>,
-    //TODO: may want to add methods on all structs using weak to occasionally clean references
-    required_by: HashSet<rc::Weak<Target>>,
-}
 
 //TODO: consider implementing snippet as a type rather than a struct
 // would be combined with a match at runtime to execute appropriate behavior
@@ -60,5 +52,36 @@ fn no_action() -> Vec<Actions> {
 #[derive(Deserialize, Clone, Debug)]
 pub struct Loader {
     #[serde(flatten, with = "tuple_vec_map")]
-    snippets: Vec<(String, Snippet)>,
+    pub(crate) snippets: Vec<(String, Snippet)>,
+}
+
+#[derive(Debug)]
+pub struct SnippetSet {
+    /// tracks the set each group of snippets belong to, as well as
+    /// which targets require them
+    pub(crate) contents: Vec<String>,
+    //TODO: may want to add methods on all structs using weak to occasionally clean references
+    target_counter: i32,
+}
+
+impl SnippetSet {
+    pub(crate) fn new(contents: Vec<String>)->Self {
+        Self {
+            contents,
+            target_counter: 1,
+        }
+    }
+    pub fn added_target(&mut self){
+        self.target_counter+=1;
+    }
+
+    pub fn decrement_target(&mut self)->bool{
+        if self.target_counter>1{
+            self.target_counter-=1;
+            false
+        } else {
+            true
+        }
+    }
+
 }

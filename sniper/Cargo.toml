@@ -9,7 +9,8 @@ edition = "2018"
 
 
 [dependencies]
-dashmap = {version="4.0.2", features=["serde"]}#,"rayon"]}
+dashmap = {version="4.0.2", features=["serde","rayon"]}
+rayon = {version="1.5"}
 serde-tuple-vec-map={version="1.0.0"}
 serde = {version="1.0.115", features=["derive"]}
 toml = {version="0.5", features = ["preserve_order"]}

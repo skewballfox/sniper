@@ -3,7 +3,7 @@
 //https://github.com/kak-lsp/kak-lsp/blob/master/src/util.rs#L15
 pub fn temp_dir() -> path::PathBuf {
     let mut path = env::temp_dir();
-    path.push("kak-lsp");
+    path.push("sniper");
     let old_mask = unsafe { libc::umask(0) };
     // Ignoring possible error during $TMPDIR/kak-lsp creation to have a chance to restore umask.
     let _ = fs::DirBuilder::new()
