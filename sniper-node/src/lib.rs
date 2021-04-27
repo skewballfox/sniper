@@ -1,6 +1,9 @@
-use neon::prelude::*;
 use sniper::Target::*;
+
+use neon::prelude::*;
 use neon::register_module;
+
+use std::os::unix::net::UnixStream;
 
 
 struct SniperNode {
@@ -8,7 +11,7 @@ struct SniperNode {
 }
 impl Finalize for SniperNode {}
 
-use std::os::unix::net::UnixStream;
+
 //TODO: needs some kind of target blacklist for situation
 //where target isn't viable
 

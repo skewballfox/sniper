@@ -1,6 +1,4 @@
 
-use std::collections::HashSet;
-use std::rc;
 use serde::Deserialize;
 //these are the currently (planned) supported actions for snippets
 #[derive(Deserialize, Clone, Debug)]
@@ -73,14 +71,14 @@ impl SnippetSet {
         }
     }
 
-    pub fn added_target(&mut self){
+    pub fn increment_target_count(&mut self){
         self.target_counter+=1;
     }
 
     ///this is ran when a dropping a target, the returned boolean is used to
     /// determine if the snippets associated with this snippet set need to be 
     /// dropped
-    pub fn decrement_target(&mut self)->bool{
+    pub fn decrement_target_count(&mut self)->bool{
         if self.target_counter>1{
             self.target_counter-=1;
             false
