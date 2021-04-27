@@ -26,18 +26,22 @@ impl Sniper {
     }
     
     /// get, parse, rebuild, and return a snippet
-    fn snipe(self, snippet: &str) {
+    fn snipe(&mut self, language: &str, snippet_key: &str) {
+        if let Some(mut snippet)=self.snippets.get_mut(&(language.to_string(),snippet_key.to_string())){
+            println!("todo");
+        }
         
-        println!("todo");
         //return snippets[snippet].body;
     }
+    /*fn rebuild_snippet(&mut self, language: &str, snippet: &mut Snippet) -> Snippet {
+        unimplemented!();
+    }*/
     
     //pub fn add_snippets()
-    
+    /*
     /// load snippets from file
     fn load_snippets(&mut self,language: &str,snip_set_name: &str, snippet_data: &str){
     
-        
         let temp: Loader=toml::from_str(&snippet_data).unwrap();
         let mut snippet_set: Vec<String>= Vec::with_capacity(temp.snippets.len());
         for (snippet_key,snippet) in temp.snippets.iter(){
@@ -56,7 +60,7 @@ impl Sniper {
         }
         self.snippet_sets.remove(&(language.to_string(),snip_set_to_drop));
     }
-
+    */
     /// add a session to the list of currently tracked sessions
     pub fn add_target(&mut self, session_id: &str,uri: &str, language: &str){
 
