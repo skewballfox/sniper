@@ -12,6 +12,7 @@ edition = "2018"
 dashmap = {version="4.0.2", features=["serde","rayon"]}
 rayon = {version="1.5"}
 serde-tuple-vec-map={version="1.0.0"}
+fancy-regex = "0.5.0"
 serde = {version="1.0.115", features=["derive"]}
 toml = {version="0.5", features = ["preserve_order"]}
 directories = "3.0"
