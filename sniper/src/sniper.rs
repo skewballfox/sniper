@@ -1,6 +1,6 @@
 use crate::config::SniperConfig;
 use crate::target::TargetData;
-use crate::snippet::{Snippet,SnippetSet,Loader};
+use crate::rifle::Rifle;
 
 use dashmap::DashMap;
 use rayon::prelude::*;
@@ -10,9 +10,8 @@ use std::collections::{HashMap};
 #[derive(Debug)]
 pub struct Sniper {
     pub(crate) config: SniperConfig,
-    targets: HashMap<(String,String),TargetData>,
-    pub(crate) snippets: DashMap<(String,String),Snippet>,
-    snippet_sets: HashMap<(String,String),SnippetSet>,
+    pub(crate) targets: HashMap<(String,String),TargetData>,
+    pub(crate) rifle: Rifle,
 }
 
 impl Sniper {
@@ -20,43 +19,23 @@ impl Sniper {
         Self {
             config: SniperConfig::new(),
             targets: HashMap::new(),
-            snippets: DashMap::new(), 
-            snippet_sets: HashMap::new(),
+            rifle: Rifle::new()
         }
     }
     
     /// get, parse, rebuild, and return a snippet
-    fn snipe(self, snippet: &str) {
+    fn snipe(&mut self, language: &str, snippet_key: &str) {
+        if let Some(mut snippet)=self.rifle.snippets.get_mut(&(language.to_string(),snippet_key.to_string())){
+            println!("todo");
+        }
         
-        println!("todo");
         //return snippets[snippet].body;
     }
+    /*fn rebuild_snippet(&mut self, language: &str, snippet: &mut Snippet) -> Snippet {
+        unimplemented!();
+    }*/
     
-    //pub fn add_snippets()
     
-    /// load snippets from file
-    fn load_snippets(&mut self,language: &str,snip_set_name: &str, snippet_data: &str){
-    
-        
-        let temp: Loader=toml::from_str(&snippet_data).unwrap();
-        let mut snippet_set: Vec<String>= Vec::with_capacity(temp.snippets.len());
-        for (snippet_key,snippet) in temp.snippets.iter(){
-
-            self.snippets.insert((language.to_string(),snippet_key.to_string()),snippet.to_owned());
-            snippet_set.push(snippet_key.to_string());
-        }
-        self.snippet_sets.insert((language.to_string(),snip_set_name.to_string()),SnippetSet::new(snippet_set));
-        
-    }
-    
-    /// drop snippets tied to a given snippet set
-    fn drop_snippets(&mut self, language: &str, snip_set_to_drop: String) {
-        for snippet_key in self.snippet_sets[&(language.to_string(),snip_set_to_drop.clone())].contents.iter(){
-            self.snippets.remove(&(language.to_string(),snippet_key.to_string()));
-        }
-        self.snippet_sets.remove(&(language.to_string(),snip_set_to_drop));
-    }
-
     /// add a session to the list of currently tracked sessions
     pub fn add_target(&mut self, session_id: &str,uri: &str, language: &str){
 
@@ -68,13 +47,13 @@ impl Sniper {
                     //NOTE: in future need to handle error, where base snippets
                     //defined in config isn't found (in appropriate directory)
                     let snippet_data= self.config.get_snippet_data(language,snippet_set);
-                    self.load_snippets(language,snippet_set,&snippet_data);
+                    self.rifle.load_snippets(language,snippet_set,&snippet_data);
                     target_data.loaded_snippets.insert(snippet_set.to_string());
                 }
                 self.config.language_initialized(language);
             } else {//the base sets for this language have already been loaded
                 for snippet_set in self.config.languages[language].base_snippets.clone().iter(){
-                    self.snippet_sets.get_mut(&(language.to_string(),snippet_set.to_string())).unwrap().increment_target_count();
+                    self.rifle.snippet_sets.get_mut(&(language.to_string(),snippet_set.to_string())).unwrap().increment_target_count();
                 }
             }
             self.targets.insert((session_id.to_string(),uri.to_string()),target_data);
@@ -87,7 +66,6 @@ impl Sniper {
     
     //fn update_target(&mut self, )
     
-    //fn add_snippet_set(&mut self)
        
         
     /// drop a target,
@@ -101,9 +79,9 @@ impl Sniper {
             if let Some(target_data)=self.targets.remove(&(session_id.to_string(),uri.to_string())){    
                 for snip_set in target_data.loaded_snippets.iter(){
         
-                    let drop_snippets_flag=self.snippet_sets.get_mut(&(language.to_string(),snip_set.to_string())).unwrap().decrement_target_count();
+                    let drop_snippets_flag=self.rifle.snippet_sets.get_mut(&(language.to_string(),snip_set.to_string())).unwrap().decrement_target_count();
                     if drop_snippets_flag {
-                        self.drop_snippets(language,snip_set.to_string())
+                        self.rifle.drop_snippets(language,snip_set.to_string())
                     }
                 }
             }
