@@ -19,6 +19,7 @@ macro_rules! unwrap_or_return {
 
 ///This struct stores snippets, tracks the sets in play, and handles all logic related to snippet management
 /// such as removal, and rebuilding the snippet
+/// p.s. these word puns are probably getting out of hand at this point
 #[derive(Debug)]
 pub(crate) struct Rifle {
     bolt: SnippetParser;
@@ -29,7 +30,7 @@ pub(crate) struct Rifle {
 impl Rifle {
     pub fn new() -> Self {
         Self {
-            parser: SnippetParser::new(),
+            pin: SnippetParser::new(),
             snippets: DashMap::new(),
             snippet_sets: HashMap::new(), 
         }
