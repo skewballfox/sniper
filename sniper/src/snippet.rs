@@ -27,12 +27,14 @@ pub struct Snippet {
     name: String,
     #[serde(rename = "type", default = "default_snippet_type")]
     snippet_type: SnippetTypes,
-    body: Vec<String>,
+    pub(crate) body: Vec<String>,
     description: String,
     #[serde(default = "unconditional")]
     is_conditional: bool,
     #[serde(default = "no_action")]
     actions: Vec<Actions>,
+    #[serde(default = "assembly_required")]
+    pub(crate) requires_assembly:bool,
 }
 
 fn default_snippet_type() -> SnippetTypes {
@@ -45,6 +47,9 @@ fn unconditional() -> bool {
 
 fn no_action() -> Vec<Actions> {
     Vec::new()
+}
+fn assembly_required() -> bool {
+    true
 }
 
 #[derive(Deserialize, Clone, Debug)]

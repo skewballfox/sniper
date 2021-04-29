@@ -24,8 +24,8 @@ impl Sniper {
     }
     
     /// get, parse, rebuild, and return a snippet
-    fn snipe(&mut self, language: &str, snippet_key: &str) {
-        if let Some(mut snippet)=self.rifle.snippets.get_mut(&(language.to_string(),snippet_key.to_string())){
+    fn snipe<S: Into<String>>(&mut self, language: S, snippet_key: S) {
+        if let Some(mut snippet)=self.rifle.snippets.get_mut(&(language.into(),snippet_key.into())){
             println!("todo");
         }
         
@@ -37,7 +37,7 @@ impl Sniper {
     
     
     /// add a session to the list of currently tracked sessions
-    pub fn add_target(&mut self, session_id: &str,uri: &str, language: &str){
+    pub fn add_target<S: Into<String>>(&mut self, session_id: S,uri: S, language: S){
 
         if self.config.languages.contains_key(language) {
             let mut target_data=TargetData::new(&language);
@@ -47,16 +47,16 @@ impl Sniper {
                     //NOTE: in future need to handle error, where base snippets
                     //defined in config isn't found (in appropriate directory)
                     let snippet_data= self.config.get_snippet_data(language,snippet_set);
-                    self.rifle.load_snippets(language,snippet_set,&snippet_data);
+                    self.rifle.load(language,snippet_set,&snippet_data);
                     target_data.loaded_snippets.insert(snippet_set.to_string());
                 }
-                self.config.language_initialized(language);
+                self.config.language_initialized(language.into());
             } else {//the base sets for this language have already been loaded
-                for snippet_set in self.config.languages[language].base_snippets.clone().iter(){
-                    self.rifle.snippet_sets.get_mut(&(language.to_string(),snippet_set.to_string())).unwrap().increment_target_count();
+                for snippet_set in self.config.languages[&language.into()].base_snippets.clone().iter(){
+                    self.rifle.snippet_sets.get_mut(&(language.into(),snippet_set.into())).unwrap().increment_target_count();
                 }
             }
-            self.targets.insert((session_id.to_string(),uri.to_string()),target_data);
+            self.targets.insert((session_id.into(),uri.into()),target_data);
             //should only track a target if it is in a supported language
             //should have some way of mitigating request for adding nonviable targets
             //client side
@@ -71,17 +71,17 @@ impl Sniper {
     /// drop a target,
     /// drop a snippet set if no longer required by any targets
     /// exit sniper if no targets left
-    fn drop_target(&mut self, session_id: &str,uri: &str, language: &str){
+    fn drop_target<S: Into<String>>(&mut self, session_id: S,uri: S, language: S){
         
-        if self.targets.contains_key(&(session_id.to_string(),uri.to_string())){
+        if self.targets.contains_key(&(session_id.into(),uri.into())){
             //consider using drain filter in the future:
             //https://doc.rust-lang.org/std/collections/struct.HashSet.html#method.drain_filter
-            if let Some(target_data)=self.targets.remove(&(session_id.to_string(),uri.to_string())){    
+            if let Some(target_data)=self.targets.remove(&(session_id.into(),uri.into())){    
                 for snip_set in target_data.loaded_snippets.iter(){
         
-                    let drop_snippets_flag=self.rifle.snippet_sets.get_mut(&(language.to_string(),snip_set.to_string())).unwrap().decrement_target_count();
+                    let drop_snippets_flag=self.rifle.snippet_sets.get_mut(&(language.into(),snip_set.into())).unwrap().decrement_target_count();
                     if drop_snippets_flag {
-                        self.rifle.drop_snippets(language,snip_set.to_string())
+                        self.rifle.unload(&language.into(),snip_set)
                     }
                 }
             }
