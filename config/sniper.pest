@@ -24,11 +24,12 @@ var         ::= [_a-zA-Z] [_a-zA-Z0-9]*
 int         ::= [0-9]+
 text        ::= .*
 */
-text = _{ ".*" }
-variable 
+line={SOI ~ }
+text = _{ ASCII_ALPHANUMERIC* }
+int= _{ ASCII_DIGIT+ }
 //note from the perspective of sniper tabstops placeholders and choices should be the same
 //because it only cares about ensuring the tabstops are properly offset when building the snippet
-tabstop = {"$"~(ASCII_DIGIT+ |"{"~ ASCII_DIGIT~ "}"}
+tabstop = ${"$"~ (int | ("{"~ int+ ~ ( "}" | ("|"~ text ~ (","~text)* ~"|" ) | (":" ~ any ~"}" )) ~ "}")}
 placeholder = {"$"~(ASCII_DIGIT+ |"{"~ASCII_DIGIT~"}")
 target_directive=_{ }
 sniper_directive=_{"@"}
