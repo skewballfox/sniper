@@ -45,31 +45,31 @@ impl Rifle {
         }
     }
 
-    pub fn load<S: Into<String>>(&mut self,language: S,snip_set_name: S, snippet_data: S){
+    pub fn load(&mut self,language: &str,snip_set_name: &str, snippet_data: &str){
     
-        let temp: Loader = toml::from_str(&snippet_data.into()).unwrap();
+        let temp: Loader = toml::from_str(snippet_data.into()).unwrap();
         let mut snippet_set: Vec<String>= Vec::with_capacity(temp.snippets.len());
         for (snippet_key,snippet) in temp.snippets.iter(){
 
-            self.snippets.insert((language.into(),snippet_key.to_owned()),snippet.to_owned());
+            self.snippets.insert((language.to_string(),snippet_key.to_owned()),snippet.to_owned());
             snippet_set.push(snippet_key.to_owned());
         }
         self.snippet_sets.insert((language.into(),snip_set_name.into()),SnippetSet::new(snippet_set));
         
     }
-    pub fn unload<S: Into<String>>(&mut self, language: S, snip_set_to_drop: S) {
+    pub fn unload(&mut self, language: &str, snip_set_to_drop: &str) {
         for snippet_key in self.snippet_sets[&(language.into(),snip_set_to_drop.into())].contents.iter(){
-            self.snippets.remove(&(language.into(),snippet_key.to_string()));
+            self.snippets.remove(&(language.to_string(),snippet_key.to_string()));
         }
         self.snippet_sets.remove(&(language.into(),snip_set_to_drop.into()));
     }
 
     //TODO: probably need to change the output format
-    pub fn fire<S: Into<String>>(&mut self, language: S,snippet_name: S) -> Option<Vec<String>> { 
-        if self.snippets.contains_key(&(language.into(),snippet_name.into())){
-            return Some(self.chamber_snippet(&language.into(),snippet_name,0,""));
+    pub fn fire(&mut self, language: &str,snippet_name: &str) -> Option<Vec<String>> { 
+        if self.snippets.contains_key(&(language.to_string(),snippet_name.to_string())){
+            Some(self.chamber_snippet(&language,&snippet_name,0,""))
         } else {
-            return None
+            None
         }
     }
 
@@ -78,7 +78,7 @@ impl Rifle {
         lazy_static! {
             static ref digit: Regex = Regex::new("/d+").unwrap();
             //TODO: deal with escaped characters such as \$ in bash
-            static ref modification_needed: Regex = Regex::new(r#"\\$(\d+|\{\d+)|\\@"#).unwrap();
+            static ref modification_needed: Regex = Regex::new(r"\\$(\\d+|\\{\\d+)|\\@").unwrap();
             static ref snippet_finder: Regex = Regex::new("[a-zA-Z0-9;]+").unwrap();
             static ref snippet_args_finder: Regex = Regex::new(r#"\\(.*\\)}"#).unwrap();
         }
@@ -89,10 +89,10 @@ impl Rifle {
         let mut sub_string=String::new();
         let mut start=0;
         let mut end=0;
-        let mut bracket=0;
         let mut tabstop_count=offset.clone();
         let mut snippet_args="";
-        &mut self.snippets.get_mut(&(language.into(),snippet_name.to_string())).unwrap().body.iter().for_each(|line| {
+        //let body_to_parse=
+        self.snippets.get(&(language.into(),snippet_name.to_string())).unwrap().body.clone().iter().for_each(|line| {
  
             start=0;
             sub_string=String::with_capacity(line.len());
@@ -108,27 +108,35 @@ impl Rifle {
                 match sub_chars.next(){
                     Some('$')=>{//if placeholder was found
                         if offset==0{
-                            tabstop_count+=1;
+                            
                             sub_string.push_str(&line[start..end]);
+
                         } else {
                             let digit_indices=digit.find(&line[start+1..end]).unwrap();
-                            let mut tabstop=(line[digit_indices.start()..digit_indices.end()]).parse::<i32>().unwrap();//turbofish
-                            tabstop+=offset;
+                            if snippet_args.is_empty(){
                             
-                            //push everything upto tabstop, followed by new tabstop
-                            sub_string.push_str(&line[start..digit_indices.start()]);
-                            sub_string.push_str(&tabstop.to_string());
-                            //sub_string.push_str(&line[digit_indices.end..end]);
-                            //TODO: handle embedded tabstops
-                            //now sort through the rest of the line
-                            start=digit_indices.end();
+                                let mut tabstop=(line[digit_indices.start()..digit_indices.end()]).parse::<i32>().unwrap();//turbofish
+                                tabstop+=offset;
+                                
+                                //push everything upto tabstop, followed by new tabstop
+                                sub_string.push_str(&line[start..digit_indices.start()]);
+                                sub_string.push_str(&tabstop.to_string());
+                                //sub_string.push_str(&line[digit_indices.end..end]);
+                                //TODO: handle embedded tabstops
+                            } else {
+                                println!("todo");
+                            }
+                            
                         }
+                        tabstop_count+=1;
+                        start=end;
 
                     }
                     Some('@')=>{//if snippet was found
-
+                        println!("yum");
                         let snippet_indices=snippet_finder.find(&line[start+1..]).unwrap();
                         let sub_snippet_name=&line[snippet_indices.start()..snippet_indices.end()];
+                        println!("{:?}",sub_snippet_name);
                         start=snippet_indices.end();//ex: @if@elif@else
                         if self.snippets.contains_key(&(language.into(),sub_snippet_name.to_string())){
                             //NOTE: going off the assumption that a snippet should be in brackets
@@ -137,16 +145,20 @@ impl Rifle {
                                 let args_indices=snippet_args_finder.find(&line[snippet_indices.end()..]).unwrap();
                                 if snippet_indices.end()==args_indices.start(){
                                     snippet_args=&line[args_indices.start()..args_indices.end()];
-                                    start=args_indices.end()+1;
+                                    start=args_indices.end();
                                 }
                             }
-                            ;
+                            
                             assembled_snippet.append(&mut self.chamber_snippet(language.into(),sub_snippet_name,tabstop_count,snippet_args));
                         }
                     }
                     
-                    std::option::Option::Some(_) => {}
-                    std::option::Option::None => {}
+                    std::option::Option::Some(_) => {
+                        println!("yeet");
+                    }
+                    std::option::Option::None => {
+                        println!("yaint");
+                    }
                 }//on to next $ or @ in line, if any
             }
             
@@ -156,14 +168,15 @@ impl Rifle {
                 assembled_snippet.push(line.to_string())
             } else {
                 sub_string.push_str(&line[end..]);
-                assembled_snippet.push(sub_string);
+                assembled_snippet.push(sub_string.clone());
             }
             start=0;
             
         
         });//no more lines
-        *self.snippets.get_mut(&(language.into(),snippet_name.to_string())).unwrap().body=assembled_snippet.clone();
-        *self.snippets.get_mut(&(language.into(),snippet_name.to_string())).unwrap().requires_assembly=false;
+        println!("{:#?}",assembled_snippet);
+        self.snippets.get_mut(&(language.into(),snippet_name.to_string())).unwrap().body=assembled_snippet.clone();
+        self.snippets.get_mut(&(language.into(),snippet_name.to_string())).unwrap().requires_assembly=false;
         return assembled_snippet
     }
 
