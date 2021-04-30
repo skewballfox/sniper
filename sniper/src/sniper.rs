@@ -24,9 +24,11 @@ impl Sniper {
     }
     
     /// get, parse, rebuild, and return a snippet
-    fn snipe<S: Into<String>>(&mut self, language: S, snippet_key: S) {
-        if let Some(mut snippet)=self.rifle.snippets.get_mut(&(language.into(),snippet_key.into())){
-            println!("todo");
+    pub fn snipe(&mut self, language: &str, snippet_key: &str) -> Option<Vec<String>> {
+        if let Some(round)=self.rifle.fire(language,snippet_key){
+            Some(round)
+        } else {
+            None
         }
         
         //return snippets[snippet].body;
@@ -37,22 +39,22 @@ impl Sniper {
     
     
     /// add a session to the list of currently tracked sessions
-    pub fn add_target<S: Into<String>>(&mut self, session_id: S,uri: S, language: S){
+    pub fn add_target(&mut self, session_id: &str,uri: &str, language: &str){
 
-        if self.config.languages.contains_key(&language.into()) {
-            let mut target_data=TargetData::new(&language.into());
+        if self.config.languages.contains_key(language.into()) {
+            let mut target_data=TargetData::new(language.into());
             
-            if !self.config.languages[&language.into()].initialized {
-                for snippet_set in self.config.languages[&language.into()].base_snippets.clone().iter(){
+            if !self.config.languages[language].initialized {
+                for snippet_set in self.config.languages[language.into()].base_snippets.clone().iter(){
                     //NOTE: in future need to handle error, where base snippets
                     //defined in config isn't found (in appropriate directory)
-                    let snippet_data= self.config.get_snippet_data(&language.into(),snippet_set);
-                    self.rifle.load(language.into(),snippet_set.to_string(),snippet_data.to_string());
+                    let snippet_data= self.config.get_snippet_data(language.into(),snippet_set);
+                    self.rifle.load(language.into(),&snippet_set.to_string(),&snippet_data.to_string());
                     target_data.loaded_snippets.insert(snippet_set.to_string());
                 }
-                self.config.language_initialized(&language.into());
+                self.config.language_initialized(language.into());
             } else {//the base sets for this language have already been loaded
-                for snippet_set in self.config.languages[&language.into()].base_snippets.clone().iter(){
+                for snippet_set in self.config.languages[language.into()].base_snippets.clone().iter(){
                     self.rifle.snippet_sets.get_mut(&(language.into(),snippet_set.into())).unwrap().increment_target_count();
                 }
             }
@@ -71,7 +73,7 @@ impl Sniper {
     /// drop a target,
     /// drop a snippet set if no longer required by any targets
     /// exit sniper if no targets left
-    fn drop_target<S: Into<String>>(&mut self, session_id: S,uri: S, language: S){
+    fn drop_target<S: Into<String>>(&mut self, session_id: &str,uri: &str, language: &str){
         
         if self.targets.contains_key(&(session_id.into(),uri.into())){
             //consider using drain filter in the future:
@@ -81,7 +83,7 @@ impl Sniper {
         
                     let drop_snippets_flag=self.rifle.snippet_sets.get_mut(&(language.into(),snip_set.into())).unwrap().decrement_target_count();
                     if drop_snippets_flag {
-                        self.rifle.unload(&language.into(),snip_set)
+                        self.rifle.unload(language.into(),snip_set)
                     }
                 }
             }
