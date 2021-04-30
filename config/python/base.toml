@@ -29,13 +29,13 @@ args=["elif","else"]
 ["if/else"]
 name = "if/else"
 type="Statement"
-body = ["${SNIPPET:if}", "${SNIPPET:else}"]
+body = ["@if", "@else"]
 description = "Code snippet for an if statement with else"
 
 ["if/elif/else"]
 name = "if/elif/else"
 type="Statement"
-body = ["${SNIPPET:if}", "${SNIPPET:elif}", "${SNIPPET:else}"]
+body = ["@if", "@elif", "@else"]
 description = "Code snippet for an if statement with else"
 
 [while]
@@ -47,7 +47,7 @@ description = "Code snippet for a while loop"
 ["while/else"]
 name = "while/else"
 type="Statement"
-body = ["${SNIPPET:while}", "${SNIPPET:else}"]
+body = ["@while", "@else"]
 description = "Code snippet for a while loop with else"
 
 [for]
@@ -59,7 +59,7 @@ description = "Code snippet for a for loop"
 ["for/else"]
 name = "for/else"
 type="Statement"
-body = ["${SNIPPET:for}", "${SNIPPET:else}"]
+body = ["@for", "@else"]
 description = "Code snippet for a for loop with else"
 
 ["try/except"]

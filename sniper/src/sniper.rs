@@ -39,18 +39,18 @@ impl Sniper {
     /// add a session to the list of currently tracked sessions
     pub fn add_target<S: Into<String>>(&mut self, session_id: S,uri: S, language: S){
 
-        if self.config.languages.contains_key(language) {
-            let mut target_data=TargetData::new(&language);
+        if self.config.languages.contains_key(&language.into()) {
+            let mut target_data=TargetData::new(&language.into());
             
-            if !self.config.languages[language].initialized {
-                for snippet_set in self.config.languages[language].base_snippets.clone().iter(){
+            if !self.config.languages[&language.into()].initialized {
+                for snippet_set in self.config.languages[&language.into()].base_snippets.clone().iter(){
                     //NOTE: in future need to handle error, where base snippets
                     //defined in config isn't found (in appropriate directory)
-                    let snippet_data= self.config.get_snippet_data(language,snippet_set);
-                    self.rifle.load(language,snippet_set,&snippet_data);
+                    let snippet_data= self.config.get_snippet_data(&language.into(),snippet_set);
+                    self.rifle.load(language.into(),snippet_set.to_string(),snippet_data.to_string());
                     target_data.loaded_snippets.insert(snippet_set.to_string());
                 }
-                self.config.language_initialized(language.into());
+                self.config.language_initialized(&language.into());
             } else {//the base sets for this language have already been loaded
                 for snippet_set in self.config.languages[&language.into()].base_snippets.clone().iter(){
                     self.rifle.snippet_sets.get_mut(&(language.into(),snippet_set.into())).unwrap().increment_target_count();
