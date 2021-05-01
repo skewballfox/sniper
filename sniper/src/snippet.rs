@@ -8,7 +8,6 @@ pub enum Actions {
     Enable(Vec<String>),
     Disable(Vec<String>),
     //Commands, //potentially script running of commands such as making or renaming a file
-    //Adjust, //shouldn't be in file, there to tell sniper to reparse at snippet launch time
 }
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename = "type")]
