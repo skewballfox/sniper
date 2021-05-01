@@ -83,11 +83,12 @@ impl Rifle {
     
     fn chamber_snippet(
         &mut self, 
-        language: &str,
-        snippet_name: &str,
-        offset: &mut i32,
-        depth: i32,
-        snippet_args: &str) -> Vec<String> {
+        language: &str, //the language which is used as half of the key for the snippet
+        snippet_name: &str, //the snippet name, which the other half of the key
+        offset: &mut i32, // the value that is used to correct the snippet tabstop
+        depth: i32, //the current function call depth
+        snippet_args: &str,//TODO: the arguments supplied to override tabstops
+        ) -> Vec<String> { //NOTE: return value likely to change to Vec<Vec<Strings>> with len = depth
         lazy_static! {
             static ref digit: Regex = Regex::new(r"[[0-9]&&[^a-zA-Z]]+").unwrap();
             //TODO: deal with escaped characters such as \$ in bash
