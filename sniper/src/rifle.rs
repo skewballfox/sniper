@@ -68,25 +68,27 @@ impl Rifle {
     pub fn fire(&mut self, language: &str,snippet_name: &str) -> Option<Vec<String>> { 
         if self.snippets.contains_key(&(language.to_string(),snippet_name.to_string())){
             let offset=0;
-            Some(self.chamber_snippet(&language,&snippet_name,offset,""))
+            let (round,shell)=self.chamber_snippet(&language,&snippet_name,offset,"");
+            Some(round)
         } else {
             None
         }
     }
 
     
-    fn chamber_snippet(&mut self, language: &str, snippet_name: &str,offset: i32,snippet_args: &str) -> Vec<String> {
+    fn chamber_snippet(&mut self, language: &str, snippet_name: &str,offset: i32,snippet_args: &str) -> (Vec<String>,i32) {
         lazy_static! {
-            static ref digit: Regex = Regex::new("/d+").unwrap();
+            static ref digit: Regex = Regex::new(r"\\d+").unwrap();
             //TODO: deal with escaped characters such as \$ in bash
             static ref modification_needed: Regex = Regex::new(r"(\$\{?\d+)|@").unwrap();
             static ref snippet_finder: Regex = Regex::new("[[a-zA-Z0-9/]&&[^@]]+").unwrap();
             static ref snippet_args_finder: Regex = Regex::new(r"\(.*\)}").unwrap();
         }
         if !self.snippets.get(&(language.into(),snippet_name.to_string())).unwrap().requires_assembly {
-            return self.snippets.get_mut(&(language.into(),snippet_name.to_string())).unwrap().body.clone();
+            return (self.snippets.get_mut(&(language.into(),snippet_name.to_string())).unwrap().body.clone(),offset);
         }
         //why is offset always 0 on recursive calls
+        println!("called on this snippet: {:?}",snippet_name);
         println!("original offset: {:?}",offset);
         let mut assembled_snippet: Vec<String>=Vec::new();
         let mut sub_string=String::new();
@@ -96,11 +98,12 @@ impl Rifle {
         let mut snippet_args="";
         let body_to_parse=self.snippets.get(&(language.into(),snippet_name.to_string())).unwrap().body.clone();
         body_to_parse.iter().for_each(|line| {
- 
+            println!("tabstop count at top of outer loop: {:?}",tabstop_count);
             start=0;
             sub_string=String::with_capacity(line.len());
             //sub_res="";
             for submatch in modification_needed.find_iter(line){
+                println!("tabstop count at start of submatch: {:?}",tabstop_count);
                 if submatch.start()>start {
                     sub_string.push_str(&line[start..submatch.start()]);
                 }
@@ -117,9 +120,10 @@ impl Rifle {
 
                         } else {
                             let digit_indices=digit.find(&line[start..end]).unwrap();
+                            println!("digit: {:?}",&line[digit_indices.start()..digit_indices.end()]);
                             if snippet_args.is_empty(){
                             
-                                let mut tabstop=(line[digit_indices.start()..digit_indices.end()+1]).parse::<i32>().unwrap();//turbofish
+                                let mut tabstop=(line[digit_indices.start()..digit_indices.end()]).parse::<i32>().unwrap();//turbofish
                                 println!("{:?}",&line[start..end]);
                                 tabstop+=offset;
                                 
@@ -157,7 +161,11 @@ impl Rifle {
                                 }
                             }
                             println!("tabstop count before pass: {:?}",tabstop_count);
-                            assembled_snippet.append(&mut self.chamber_snippet(language.into(),sub_snippet_name,tabstop_count,snippet_args));
+                            let mut result=self.chamber_snippet(language.into(),sub_snippet_name,tabstop_count,snippet_args);
+                            tabstop_count=result.1;
+                            assembled_snippet.append(&mut (result.0));
+                            
+                            //println!("tabstop count after pass: {:?}", tabstop_count);
                         }
                     }
                     
@@ -172,20 +180,21 @@ impl Rifle {
             
             //nothing worth mentioning was found
 
-            if sub_string.is_empty(){
+            if tabstop_count == 0 && sub_string.is_empty(){
                 assembled_snippet.push(line.to_string())
             } else {
-                sub_string.push_str(&line[end..]);
+                sub_string.push_str(&line[start..]);
                 assembled_snippet.push(sub_string.clone());
             }
             start=0;
             
         
         });//no more lines
-        println!("{:#?}",assembled_snippet);
+        println!("tabstop count at end: {:?}",tabstop_count);
+        //println!("{:#?}",assembled_snippet);
         self.snippets.get_mut(&(language.into(),snippet_name.to_string())).unwrap().body=assembled_snippet.clone();
         self.snippets.get_mut(&(language.into(),snippet_name.to_string())).unwrap().requires_assembly=false;
-        return assembled_snippet
+        return (assembled_snippet,tabstop_count)
     }
 
 }
