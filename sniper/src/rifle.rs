@@ -67,8 +67,13 @@ impl Rifle {
     //TODO: probably need to change the output format
     pub fn fire(&mut self, language: &str,snippet_name: &str) -> Option<Vec<String>> { 
         if self.snippets.contains_key(&(language.to_string(),snippet_name.to_string())){
-            let offset=0;
-            let (round,shell)=self.chamber_snippet(&language,&snippet_name,offset,"");
+            let mut offset=0;
+            let depth=0;
+            let round=self.chamber_snippet(&language,
+                &snippet_name,
+                &mut offset,
+                depth,
+                "");
             Some(round)
         } else {
             None
@@ -76,16 +81,22 @@ impl Rifle {
     }
 
     
-    fn chamber_snippet(&mut self, language: &str, snippet_name: &str,offset: i32,snippet_args: &str) -> (Vec<String>,i32) {
+    fn chamber_snippet(
+        &mut self, 
+        language: &str,
+        snippet_name: &str,
+        offset: &mut i32,
+        depth: i32,
+        snippet_args: &str) -> Vec<String> {
         lazy_static! {
-            static ref digit: Regex = Regex::new(r"\\d+").unwrap();
+            static ref digit: Regex = Regex::new(r"[[0-9]&&[^a-zA-Z]]+").unwrap();
             //TODO: deal with escaped characters such as \$ in bash
             static ref modification_needed: Regex = Regex::new(r"(\$\{?\d+)|@").unwrap();
             static ref snippet_finder: Regex = Regex::new("[[a-zA-Z0-9/]&&[^@]]+").unwrap();
             static ref snippet_args_finder: Regex = Regex::new(r"\(.*\)}").unwrap();
         }
         if !self.snippets.get(&(language.into(),snippet_name.to_string())).unwrap().requires_assembly {
-            return (self.snippets.get_mut(&(language.into(),snippet_name.to_string())).unwrap().body.clone(),offset);
+            return self.snippets.get_mut(&(language.into(),snippet_name.to_string())).unwrap().body.clone();
         }
         //why is offset always 0 on recursive calls
         println!("called on this snippet: {:?}",snippet_name);
@@ -94,7 +105,7 @@ impl Rifle {
         let mut sub_string=String::new();
         let mut start=0;
         let mut end=0;
-        let mut tabstop_count=offset;
+        let mut tabstop_count=offset.clone();
         let mut snippet_args="";
         let body_to_parse=self.snippets.get(&(language.into(),snippet_name.to_string())).unwrap().body.clone();
         body_to_parse.iter().for_each(|line| {
@@ -109,23 +120,24 @@ impl Rifle {
                 }
                 start=submatch.start();
                 end=submatch.end();
-                let mut sub_chars = line[start..end].chars();
+                let  first_char = line[start..end].chars().nth(0).clone();
                 //I only care about two things server-side: tabstops and snippets
-                match sub_chars.next(){
+                match first_char{
                     Some('$')=>{//if placeholder was found
                         println!("tabstop found");
-                        if offset==0{
+                        println!("sub_match: {:?}",&line[start..end]);
+                        println!("full line during submatch: {:?}",line);
+                        if *offset==0{
                             
                             sub_string.push_str(&line[start..end]);
 
                         } else {
-                            let digit_indices=digit.find(&line[start..end]).unwrap();
+                            let digit_indices=digit.find(&line[start..end+1]).unwrap();
                             println!("digit: {:?}",&line[digit_indices.start()..digit_indices.end()]);
                             if snippet_args.is_empty(){
                             
                                 let mut tabstop=(line[digit_indices.start()..digit_indices.end()]).parse::<i32>().unwrap();//turbofish
-                                println!("{:?}",&line[start..end]);
-                                tabstop+=offset;
+                                tabstop+=*offset;
                                 
                                 //push everything upto tabstop, followed by new tabstop
                                 sub_string.push_str(&line[start..digit_indices.start()]);
@@ -153,17 +165,22 @@ impl Rifle {
                         if self.snippets.contains_key(&(language.into(),sub_snippet_name.to_string())){
                             //NOTE: going off the assumption that a snippet should be in brackets
                             //only if it has tab_args
-                            if sub_chars.next()==Some('{'){
+                            /*if sub_chars.next()==Some('{'){
                                 let args_indices=snippet_args_finder.find(&line[snippet_indices.end()..]).unwrap();
                                 if snippet_indices.end()==args_indices.start(){
                                     snippet_args=&line[args_indices.start()..args_indices.end()];
                                     start=args_indices.end();
                                 }
-                            }
+                            }*/
                             println!("tabstop count before pass: {:?}",tabstop_count);
-                            let mut result=self.chamber_snippet(language.into(),sub_snippet_name,tabstop_count,snippet_args);
-                            tabstop_count=result.1;
-                            assembled_snippet.append(&mut (result.0));
+                            
+                            assembled_snippet.append(&mut self.chamber_snippet(language.into(),
+                                sub_snippet_name,
+                                &mut tabstop_count,
+                                depth+1,
+                                snippet_args)
+                        );
+
                             
                             //println!("tabstop count after pass: {:?}", tabstop_count);
                         }
@@ -191,10 +208,11 @@ impl Rifle {
         
         });//no more lines
         println!("tabstop count at end: {:?}",tabstop_count);
+        *offset+=tabstop_count;
         //println!("{:#?}",assembled_snippet);
         self.snippets.get_mut(&(language.into(),snippet_name.to_string())).unwrap().body=assembled_snippet.clone();
         self.snippets.get_mut(&(language.into(),snippet_name.to_string())).unwrap().requires_assembly=false;
-        return (assembled_snippet,tabstop_count)
+        return assembled_snippet
     }
 
 }
