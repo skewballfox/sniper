@@ -3,6 +3,7 @@ mod target;
 mod sniper;
 mod snippet;
 mod rifle;
+//mod server;
 //mod server.rs
 
 

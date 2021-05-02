@@ -1,12 +1,12 @@
 
 //good artist copy, great artist steal
 //https://github.com/kak-lsp/kak-lsp/blob/master/src/util.rs#L15
-pub fn temp_dir() -> path::PathBuf {
-    let mut path = env::temp_dir();
+pub fn temp_dir() -> std::path::PathBuf {
+    let mut path = std::env::temp_dir();
     path.push("sniper");
     let old_mask = unsafe { libc::umask(0) };
     // Ignoring possible error during $TMPDIR/kak-lsp creation to have a chance to restore umask.
-    let _ = fs::DirBuilder::new()
+    let _ = std::fs::DirBuilder::new()
         .recursive(true)
         .mode(0o1777)
         .create(&path);
@@ -14,7 +14,7 @@ pub fn temp_dir() -> path::PathBuf {
         libc::umask(old_mask);
     }
     path.push(whoami::username());
-    fs::DirBuilder::new()
+    std::fs::DirBuilder::new()
         .recursive(true)
         .mode(0o700)
         .create(&path)
@@ -26,10 +26,10 @@ pub fn temp_dir() -> path::PathBuf {
 //https://github.com/kak-lsp/kak-lsp/blob/master/src/main.rs#L209
 fn request(config: &Config) {
     let mut input = Vec::new();
-    stdin()
+    std::io::stdin()
         .read_to_end(&mut input)
         .expect("Failed to read stdin");
-    let mut path = util::temp_dir();
+    let mut path = temp_dir();
     path.push(&config.server.session);
     if let Ok(mut stream) = UnixStream::connect(&path) {
         stream
