@@ -81,7 +81,7 @@ impl Rifle {
     }
 
     
-    fn chamber_snippet(
+    fn chamber_snippet(//note this is still not done, but I'm coming back after feedback
         &mut self, 
         language: &str, //the language which is used as half of the key for the snippet
         snippet_name: &str, //the snippet name, which the other half of the key
@@ -107,13 +107,12 @@ impl Rifle {
         let mut start=0;
         let mut end=0;
         let mut tabstop_count=offset.clone();
-        let mut snippet_args="";
+        let mut sub_snippet_args="";
         let body_to_parse=self.snippets.get(&(language.into(),snippet_name.to_string())).unwrap().body.clone();
         body_to_parse.iter().for_each(|line| {
             println!("tabstop count at top of outer loop: {:?}",tabstop_count);
             start=0;
             sub_string=String::with_capacity(line.len());
-            //sub_res="";
             for submatch in modification_needed.find_iter(line){
                 println!("tabstop count at start of submatch: {:?}",tabstop_count);
                 if submatch.start()>start {
@@ -133,15 +132,15 @@ impl Rifle {
                             sub_string.push_str(&line[start..end]);
 
                         } else {
-                            let digit_indices=digit.find(&line[start..end+1]).unwrap();
-                            println!("digit: {:?}",&line[digit_indices.start()..digit_indices.end()]);
+                            let digit_indices=digit.find(&line[start..end]).unwrap();
+                            println!("digit: {:?}",&line[start+digit_indices.start()..start+digit_indices.end()]);
                             if snippet_args.is_empty(){
                             
-                                let mut tabstop=(line[digit_indices.start()..digit_indices.end()]).parse::<i32>().unwrap();//turbofish
+                                let mut tabstop=(line[start+digit_indices.start()..start+digit_indices.end()]).parse::<i32>().unwrap();//turbofish
                                 tabstop+=*offset;
                                 
                                 //push everything upto tabstop, followed by new tabstop
-                                sub_string.push_str(&line[start..digit_indices.start()]);
+                                sub_string.push_str(&line[start..start+digit_indices.start()]);
                                 sub_string.push_str(&tabstop.to_string());
                             
                                 //TODO: handle embedded tabstops
@@ -160,7 +159,7 @@ impl Rifle {
                         
                         let snippet_indices=snippet_finder.find(&line[end..]).unwrap();
                         //TODO: find out why the hell start+1 is the actual start of the snippet
-                        let sub_snippet_name=&line[snippet_indices.start()+1..snippet_indices.end()+1];
+                        let sub_snippet_name=&line[end+snippet_indices.start()..end+snippet_indices.end()];
                         println!("{:?}",sub_snippet_name);
                         start=snippet_indices.end();//ex: @if@elif@else
                         if self.snippets.contains_key(&(language.into(),sub_snippet_name.to_string())){
@@ -209,7 +208,7 @@ impl Rifle {
         
         });//no more lines
         println!("tabstop count at end: {:?}",tabstop_count);
-        *offset+=tabstop_count;
+        *offset=tabstop_count;
         //println!("{:#?}",assembled_snippet);
         self.snippets.get_mut(&(language.into(),snippet_name.to_string())).unwrap().body=assembled_snippet.clone();
         self.snippets.get_mut(&(language.into(),snippet_name.to_string())).unwrap().requires_assembly=false;
