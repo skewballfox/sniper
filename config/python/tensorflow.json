@@ -1,0 +1,181 @@
+{
+   "tf:import": {
+      "body": [
+         "import tensorflow as tf"
+      ],
+      "description": "Import TensorFlow package",
+      "name": "Import TensorFlow"
+   },
+   "tf:import.actions": [
+      {
+         "action": "Load",
+         "args": [
+            "numpy",
+            "tensorflow"
+         ]
+      }
+   ],
+   "tf:conv2d": {
+      "body": [
+         "${1:features} = tf.layers.conv2d(",
+         "\t${1:features},",
+         "\tfilters=${2:64},",
+         "\tkernel_size=${3:3},",
+         "\tpadding=\"${4:same}\",",
+         "\tname=\"conv2d/${5:1}\")"
+      ],
+      "description": "2D Convolution",
+      "name": "2D Convolution"
+   },
+   "tf:transposed-conv2d": {
+      "body": [
+         "${1:features} = tf.layers.conv2d_transpose(",
+         "\t${1:features},",
+         "\tfilters=${2:64},",
+         "\tkernel_size=${3:3},",
+         "\tpadding=\"${4:same}\",",
+         "\tname=\"conv2d_transpose/${5:1}\")"
+      ],
+      "description": "Transposed 2D Convolution",
+      "name": "Transposed 2D Convolution"
+   },
+   "tf:separable-conv2d": {
+      "body": [
+         "${1:features} = tf.layers.separable_conv2d(",
+         "\t${1:features},",
+         "\tfilters=${2:64},",
+         "\tkernel_size=${3:3},",
+         "\tpadding=\"${4:same}\",",
+         "\tname=\"conv2d_separable/${5:1}\")"
+      ],
+      "description": "Separable 2D Convolution",
+      "name": "Separable 2D Convolution"
+   },
+   "tf:dense": {
+      "body": [
+         "${1:features} = tf.layers.dense(${1:features}, units=${2:64}, name=\"dense/${3:1}\")"
+      ],
+      "description": "Dense layer",
+      "name": "Dense layer"
+   },
+   "tf:max-pool2d": {
+      "body": [
+         "${1:features} = tf.layers.max_pooling2d(",
+         "\t${1:features}, pool_size=${2:2}, strides=${2:2}, padding=\"${3:same}\")"
+      ],
+      "description": "2D max pooling layer",
+      "name": "2D max pooling layer"
+   },
+   "tf:dropout": {
+      "body": [
+         "${1:features} = tf.layers.dropout(${1:features}, rate=${2:0.5})"
+      ],
+      "description": "Dropout layer",
+      "name": "Dropout layer"
+   },
+   "tf:batch-norm": {
+      "body": [
+         "${1:features} = tf.layers.batch_normalization(${1:features})"
+      ],
+      "description": "Batch normalization layer",
+      "name": "Batch normalization layer"
+   },
+   "tf:cross-entropy": {
+      "body": [
+         "loss = tf.losses.sparse_softmax_cross_entropy(",
+         "\tlabels=${1:labels}, logits=${2:logits})"
+      ],
+      "description": "Softmax cross entropy loss",
+      "name": "Softmax cross entropy loss"
+   },
+   "tf:resnet-block": {
+      "body": [
+         "def resnet_block(features, bottleneck, out_filters, training):",
+         "\t\"\"\"Residual block.\"\"\"",
+         "\twith tf.variable_scope(\"input\"):",
+         "\t\toriginal = features",
+         "\t\tfeatures = tf.layers.conv2d(features, bottleneck, 1, activation=None)",
+         "\t\tfeatures = tf.layers.batch_normalization(features, training=training)",
+         "\t\tfeatures = tf.nn.relu(features)",
+         "",
+         "\twith tf.variable_scope(\"bottleneck\"):",
+         "\t\tfeatures = tf.layers.conv2d(",
+         "\t\t\tfeatures, bottleneck, 3, activation=None, padding=\"same\")",
+         "\t\tfeatures = tf.layers.batch_normalization(features, training=training)",
+         "\t\tfeatures = tf.nn.relu(features)",
+         "",
+         "\twith tf.variable_scope(\"output\"):",
+         "\t\tfeatures = tf.layers.conv2d(features, out_filters, 1)",
+         "\t\tin_dims = original.shape[-1].value",
+         "\t\tif in_dims != out_filters:",
+         "\t\t\toriginal = tf.layers.conv2d(features, out_filters, 1, activation=None,",
+         "\t\t\t\tname=\"proj\")",
+         "\t\tfeatures += original",
+         "\treturn features"
+      ],
+      "description": "ResNet block",
+      "name": "ResNet block"
+   },
+   "tf:cnn-classifier": {
+      "body": [
+         "\"\"\"Simple convolutional neural network classififer.\"\"\"",
+         "",
+         "from __future__ import absolute_import",
+         "from __future__ import division",
+         "from __future__ import print_function",
+         "",
+         "import tensorflow as tf",
+         "",
+         "FLAGS = tf.flags.FLAGS",
+         "",
+         "def get_params():",
+         "\t\"\"\"Model params.\"\"\"",
+         "\treturn {",
+         "\t\t\"drop_rate\": 0.5",
+         "\t}",
+         "",
+         "def model(features, labels, mode, params):",
+         "\t\"\"\"CNN classifier model.\"\"\"",
+         "\timages = features[\"image\"]",
+         "\tlabels = labels[\"label\"]",
+         "",
+         "\ttf.summary.image(\"images\", images)",
+         "",
+         "\tdrop_rate = params.drop_rate if mode == tf.estimator.ModeKeys.TRAIN else 0.0",
+         "",
+         "\tfeatures = images",
+         "\tfor i, filters in enumerate([32, 64, 128]):",
+         "\t\tfeatures = tf.layers.conv2d(",
+         "\t\t\tfeatures, filters=filters, kernel_size=3, padding=\"same\",",
+         "\t\t\tname=\"conv_%d\" % (i + 1))",
+         "\t\tfeatures = tf.layers.max_pooling2d(",
+         "\t\t\tinputs=features, pool_size=2, strides=2, padding=\"same\",",
+         "\t\t\tname=\"pool_%d\" % (i + 1))",
+         "",
+         "\tfeatures = tf.contrib.layers.flatten(features)",
+         "",
+         "\tfeatures = tf.layers.dropout(features, drop_rate)",
+         "\tfeatures = tf.layers.dense(features, 512, name=\"dense_1\")",
+         "",
+         "\tfeatures = tf.layers.dropout(features, drop_rate)",
+         "\tlogits = tf.layers.dense(features, params.num_classes, activation=None,",
+         "\t\t\t\t\t\t\t name=\"dense_2\")",
+         "",
+         "\tpredictions = tf.argmax(logits, axis=1)",
+         "",
+         "\tloss = tf.losses.sparse_softmax_cross_entropy(",
+         "\t\tlabels=labels, logits=logits)",
+         "",
+         "\treturn {\"predictions\": predictions}, loss",
+         "",
+         "def eval_metrics(unused_params):",
+         "\t\"\"\"Eval metrics.\"\"\"",
+         "\treturn {",
+         "\t\t\"accuracy\": tf.contrib.learn.MetricSpec(tf.metrics.accuracy)",
+         "\t}",
+         ""
+      ],
+      "description": "A simple convolutional neural network classifier.",
+      "name": "CNN classifier"
+   }
+}

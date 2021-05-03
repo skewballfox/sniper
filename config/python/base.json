@@ -1,0 +1,303 @@
+{
+   "if": {
+      "name": "if",
+      "type": "Statement",
+      "body": [
+         "if ${1:expression}:",
+         "\t${2:pass}"
+      ],
+      "description": "Code snippet for an if statement",
+      "actions": [
+         {
+            "action": "Enable",
+            "args": [
+               "elif",
+               "else"
+            ]
+         }
+      ]
+   },
+   "elif": {
+      "name": "elif",
+      "type": "Statement",
+      "is_conditional": true,
+      "body": [
+         "elif ${1:expression}:",
+         "\t${2:pass}"
+      ],
+      "description": "Code snippet for an elif"
+   },
+   "else": {
+      "name": "else",
+      "type": "Statement",
+      "is_conditional": true,
+      "body": [
+         "else:",
+         "\t${1:pass}"
+      ],
+      "description": "Code snippet for an else",
+      "actions": [
+         {
+            "action": "Disable",
+            "args": [
+               "elif",
+               "else"
+            ]
+         }
+      ]
+   },
+   "if/else": {
+      "name": "if/else",
+      "type": "Statement",
+      "body": [
+         "@if",
+         "@else"
+      ],
+      "description": "Code snippet for an if statement with else"
+   },
+   "if/elif/else": {
+      "name": "if/elif/else",
+      "type": "Statement",
+      "body": [
+         "@if",
+         "@elif",
+         "@else"
+      ],
+      "description": "Code snippet for an if statement with else"
+   },
+   "while": {
+      "name": "while",
+      "type": "Statement",
+      "body": [
+         "while ${1:expression}:",
+         "\t${2:pass}"
+      ],
+      "description": "Code snippet for a while loop"
+   },
+   "while/else": {
+      "name": "while/else",
+      "type": "Statement",
+      "body": [
+         "@while",
+         "@else"
+      ],
+      "description": "Code snippet for a while loop with else"
+   },
+   "for": {
+      "name": "for",
+      "type": "Statement",
+      "body": [
+         "for ${1:target_list} in ${2:expression_list}:",
+         "\t${3:pass}"
+      ],
+      "description": "Code snippet for a for loop"
+   },
+   "for/else": {
+      "name": "for/else",
+      "type": "Statement",
+      "body": [
+         "@for",
+         "@else"
+      ],
+      "description": "Code snippet for a for loop with else"
+   },
+   "try/except": {
+      "name": "try/except",
+      "type": "Statement",
+      "body": [
+         "try:",
+         "\t${1:pass}",
+         "except ${2:expression} as ${3:identifier}:",
+         "\t${4:pass}"
+      ],
+      "description": "Code snippet for a try/except statement"
+   },
+   "try/finally": {
+      "name": "try/finally",
+      "type": "Statement",
+      "body": [
+         "try:",
+         "\t${1:pass}",
+         "finally:",
+         "\t${2:pass}"
+      ],
+      "description": "Code snippet for a try/finally statement"
+   },
+   "try/except/else": {
+      "name": "try/except/else",
+      "type": "Statement",
+      "body": [
+         "try:",
+         "\t${1:pass}",
+         "except ${2:expression} as ${3:identifier}:",
+         "\t${4:pass}",
+         "else:",
+         "\t${5:pass}"
+      ],
+      "description": "Code snippet for a try/except/else statement"
+   },
+   "try/except/finally": {
+      "name": "try/except/finally",
+      "type": "Statement",
+      "body": [
+         "try:",
+         "\t${1:pass}",
+         "except ${2:expression} as ${3:identifier}:",
+         "\t${4:pass}",
+         "finally:",
+         "\t${5:pass}"
+      ],
+      "description": "Code snippet for a try/except/finally statement"
+   },
+   "try/except/else/finally": {
+      "name": "try/except/else/finally",
+      "type": "Statement",
+      "body": [
+         "try:",
+         "\t${1:pass}",
+         "except ${2:expression} as ${3:identifier}:",
+         "\t${4:pass}",
+         "else:",
+         "\t${5:pass}",
+         "finally:",
+         "\t${6:pass}"
+      ],
+      "description": "Code snippet for a try/except/else/finally statement"
+   },
+   "with": {
+      "name": "with",
+      "type": "Statement",
+      "body": [
+         "with ${1:expression} as ${2:target}:",
+         "\t${3:pass}"
+      ],
+      "description": "Code snippet for a with statement"
+   },
+   "def": {
+      "name": "def",
+      "type": "Statement",
+      "body": [
+         "def ${1:funcname}(${2:parameter_list}):",
+         "\t${3:pass}"
+      ],
+      "description": "Code snippet for a function definition"
+   },
+   "def(class method)": {
+      "name": "def(class method)",
+      "type": "Statement",
+      "body": [
+         "def ${1:funcname}(self, ${2:parameter_list}):",
+         "\t${3:pass}"
+      ],
+      "description": "Code snippet for a class method"
+   },
+   "def(static class method)": {
+      "name": "def(static class method)",
+      "body": [
+         "@staticmethod",
+         "def ${1:funcname}(${2:parameter_list}):",
+         "\t${3:pass}"
+      ],
+      "description": "Code snippet for a static class method"
+   },
+   "def(abstract class method)": {
+      "name": "def(abstract class method)",
+      "body": [
+         "def ${1:funcname}(self, ${2:parameter_list}):",
+         "\traise NotImplementedError"
+      ],
+      "description": "Code snippet for an abstract class method"
+   },
+   "class": {
+      "name": "class",
+      "body": [
+         "class ${1:classname}(${2:object}):",
+         "\t${3:pass}"
+      ],
+      "description": "Code snippet for a class definition"
+   },
+   "lambda": {
+      "name": "lambda",
+      "body": [
+         "lambda ${1:parameter_list}: ${2:expression}"
+      ],
+      "description": "Code snippet for a lambda statement"
+   },
+   "if(main)": {
+      "name": "__main__",
+      "body": [
+         "if __name__ == \"__main__\":",
+         "    ${1:pass}"
+      ],
+      "description": "Code snippet for a `if __name__ == \"__main__\": ...` block"
+   },
+   "async/def": {
+      "name": "async/def",
+      "body": [
+         "async def ${1:funcname}(${2:parameter_list}):",
+         "\t${3:pass}"
+      ],
+      "description": "Code snippet for an async statement"
+   },
+   "async/for": {
+      "name": "async/for",
+      "body": [
+         "async for ${1:target} in ${2:iter}:",
+         "\t${3:block}"
+      ],
+      "description": "Code snippet for an async for statement"
+   },
+   "async/for/else": {
+      "name": "async/for/else",
+      "body": [
+         "async for ${1:target} in ${2:iter}:",
+         "\t${3:block}",
+         "else:",
+         "\t${4:block}"
+      ],
+      "description": "Code snippet for an async for statement with else"
+   },
+   "async/with": {
+      "name": "async/with",
+      "body": [
+         "async with ${1:expr} as ${2:var}:",
+         "\t${3:block}"
+      ],
+      "description": "Code snippet for an async with statement"
+   },
+   "ipdb": {
+      "name": "ipdb",
+      "body": [
+         "import ipdb; ipdb.set_trace()"
+      ],
+      "description": "Code snippet for ipdb debug"
+   },
+   "pdb": {
+      "name": "pdb",
+      "body": [
+         "import pdb; pdb.set_trace()"
+      ],
+      "description": "Code snippet for pdb debug"
+   },
+   "pudb": {
+      "name": "pudb",
+      "body": [
+         "import pudb; pudb.set_trace()"
+      ],
+      "description": "Code snippet for pudb debug"
+   },
+   "add/new/cell": {
+      "name": "add/new/cell",
+      "body": [
+         "# %%"
+      ],
+      "description": "Code snippet to add a new cell"
+   },
+   "mark/markdown": {
+      "name": "markdown",
+      "body": [
+         "# %% [markdown]"
+      ],
+      "description": "Code snippet to add a new markdown cell"
+   }
+}
