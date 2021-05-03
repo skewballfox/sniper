@@ -28,7 +28,7 @@ fn start_sniper(mut cx: FunctionContext) -> JsResult<SniperNode> {
     } else {
         spin_up_server(&input);
     }
-};
+}
     //let config_path = cx.argument::<JsString>(0)?.value(&mut cx);
     //Ok(cx.boxed(SniperNode { sniper:Sniper::new(&config_path) }))
 

@@ -1,3 +1,5 @@
+//https://www.cs.brandeis.edu/~cs146a/rust/rustbyexample-02-21-2015/sockets.html
+
 fn main() {
     println!("Hello, world!");
     let session_id="12345";
@@ -15,11 +17,5 @@ fn start_sniper(session_id: S,test_uri: S, language: S) -> String where S: Into<
     
     //good artist copy, great artist steal
     //https://github.com/kak-lsp/kak-lsp/blob/master/src/main.rs#L209
-    if let Ok(mut stream) = UnixStream::connect(&path) {
-        stream
-            .write_all(&input)
-            .expect("Failed to send stdin to server");
-    } else {
-        spin_up_server(&input);
-    }
+    
 }
