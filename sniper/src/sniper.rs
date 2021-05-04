@@ -66,14 +66,13 @@ impl Sniper {
         }
     }
     
-    //fn update_target(&mut self, )
     
        
         
     /// drop a target,
     /// drop a snippet set if no longer required by any targets
     /// exit sniper if no targets left
-    fn drop_target<S: Into<String>>(&mut self, session_id: &str,uri: &str, language: &str){
+    fn drop_target(&mut self, session_id: &str,uri: &str, language: &str){
         
         if self.targets.contains_key(&(session_id.into(),uri.into())){
             //consider using drain filter in the future:

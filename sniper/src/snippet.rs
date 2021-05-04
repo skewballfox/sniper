@@ -23,7 +23,7 @@ pub enum SnippetTypes {
 // would be combined with a match at runtime to execute appropriate behavior
 #[derive(Deserialize, Clone, Debug)]
 pub struct Snippet {
-    name: String,
+    prefix: String,
     #[serde(rename = "type", default = "default_snippet_type")]
     snippet_type: SnippetTypes,
     pub(crate) body: Vec<String>,

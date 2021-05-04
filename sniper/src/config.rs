@@ -63,7 +63,7 @@ impl SniperConfig {
           
         //TODO: actually handle errors in this function
         //its likely to actually generate them    
-        let snip_path=self.config_path.to_str().unwrap().to_owned()+"/"+language+&"/"+snippet_set+&".toml";
+        let snip_path=self.config_path.to_str().unwrap().to_owned()+"/"+language+&"/"+snippet_set+&".json";
         println!("{:?}",snip_path);
         fs::read_to_string(&snip_path).unwrap()
     

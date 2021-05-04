@@ -1,6 +1,6 @@
 {
    "if": {
-      "name": "if",
+      "prefix": "if",
       "type": "Statement",
       "body": [
          "if ${1:expression}:",
@@ -18,7 +18,7 @@
       ]
    },
    "elif": {
-      "name": "elif",
+      "prefix": "elif",
       "type": "Statement",
       "is_conditional": true,
       "body": [
@@ -28,7 +28,7 @@
       "description": "Code snippet for an elif"
    },
    "else": {
-      "name": "else",
+      "prefix": "else",
       "type": "Statement",
       "is_conditional": true,
       "body": [
@@ -47,7 +47,7 @@
       ]
    },
    "if/else": {
-      "name": "if/else",
+      "prefix": "if/else",
       "type": "Statement",
       "body": [
          "@if",
@@ -56,7 +56,7 @@
       "description": "Code snippet for an if statement with else"
    },
    "if/elif/else": {
-      "name": "if/elif/else",
+      "prefix": "if/elif/else",
       "type": "Statement",
       "body": [
          "@if",
@@ -66,7 +66,7 @@
       "description": "Code snippet for an if statement with else"
    },
    "while": {
-      "name": "while",
+      "prefix": "while",
       "type": "Statement",
       "body": [
          "while ${1:expression}:",
@@ -75,7 +75,7 @@
       "description": "Code snippet for a while loop"
    },
    "while/else": {
-      "name": "while/else",
+      "prefix": "while/else",
       "type": "Statement",
       "body": [
          "@while",
@@ -84,7 +84,7 @@
       "description": "Code snippet for a while loop with else"
    },
    "for": {
-      "name": "for",
+      "prefix": "for",
       "type": "Statement",
       "body": [
          "for ${1:target_list} in ${2:expression_list}:",
@@ -93,7 +93,7 @@
       "description": "Code snippet for a for loop"
    },
    "for/else": {
-      "name": "for/else",
+      "prefix": "for/else",
       "type": "Statement",
       "body": [
          "@for",
@@ -102,7 +102,7 @@
       "description": "Code snippet for a for loop with else"
    },
    "try/except": {
-      "name": "try/except",
+      "prefix": "try/except",
       "type": "Statement",
       "body": [
          "try:",
@@ -113,7 +113,7 @@
       "description": "Code snippet for a try/except statement"
    },
    "try/finally": {
-      "name": "try/finally",
+      "prefix": "try/finally",
       "type": "Statement",
       "body": [
          "try:",
@@ -124,7 +124,7 @@
       "description": "Code snippet for a try/finally statement"
    },
    "try/except/else": {
-      "name": "try/except/else",
+      "prefix": "try/except/else",
       "type": "Statement",
       "body": [
          "try:",
@@ -137,7 +137,7 @@
       "description": "Code snippet for a try/except/else statement"
    },
    "try/except/finally": {
-      "name": "try/except/finally",
+      "prefix": "try/except/finally",
       "type": "Statement",
       "body": [
          "try:",
@@ -150,7 +150,7 @@
       "description": "Code snippet for a try/except/finally statement"
    },
    "try/except/else/finally": {
-      "name": "try/except/else/finally",
+      "prefix": "try/except/else/finally",
       "type": "Statement",
       "body": [
          "try:",
@@ -165,7 +165,7 @@
       "description": "Code snippet for a try/except/else/finally statement"
    },
    "with": {
-      "name": "with",
+      "prefix": "with",
       "type": "Statement",
       "body": [
          "with ${1:expression} as ${2:target}:",
@@ -174,7 +174,7 @@
       "description": "Code snippet for a with statement"
    },
    "def": {
-      "name": "def",
+      "prefix": "def",
       "type": "Statement",
       "body": [
          "def ${1:funcname}(${2:parameter_list}):",
@@ -183,7 +183,7 @@
       "description": "Code snippet for a function definition"
    },
    "def(class method)": {
-      "name": "def(class method)",
+      "prefix": "def(class method)",
       "type": "Statement",
       "body": [
          "def ${1:funcname}(self, ${2:parameter_list}):",
@@ -192,7 +192,7 @@
       "description": "Code snippet for a class method"
    },
    "def(static class method)": {
-      "name": "def(static class method)",
+      "prefix": "def(static class method)",
       "body": [
          "@staticmethod",
          "def ${1:funcname}(${2:parameter_list}):",
@@ -201,7 +201,7 @@
       "description": "Code snippet for a static class method"
    },
    "def(abstract class method)": {
-      "name": "def(abstract class method)",
+      "prefix": "def(abstract class method)",
       "body": [
          "def ${1:funcname}(self, ${2:parameter_list}):",
          "\traise NotImplementedError"
@@ -209,7 +209,7 @@
       "description": "Code snippet for an abstract class method"
    },
    "class": {
-      "name": "class",
+      "prefix": "class",
       "body": [
          "class ${1:classname}(${2:object}):",
          "\t${3:pass}"
@@ -217,14 +217,14 @@
       "description": "Code snippet for a class definition"
    },
    "lambda": {
-      "name": "lambda",
+      "prefix": "lambda",
       "body": [
          "lambda ${1:parameter_list}: ${2:expression}"
       ],
       "description": "Code snippet for a lambda statement"
    },
-   "if(main)": {
-      "name": "__main__",
+   "__main__": {
+      "prefix": "if(main)",
       "body": [
          "if __name__ == \"__main__\":",
          "    ${1:pass}"
@@ -232,7 +232,7 @@
       "description": "Code snippet for a `if __name__ == \"__main__\": ...` block"
    },
    "async/def": {
-      "name": "async/def",
+      "prefix": "async/def",
       "body": [
          "async def ${1:funcname}(${2:parameter_list}):",
          "\t${3:pass}"
@@ -240,7 +240,7 @@
       "description": "Code snippet for an async statement"
    },
    "async/for": {
-      "name": "async/for",
+      "prefix": "async/for",
       "body": [
          "async for ${1:target} in ${2:iter}:",
          "\t${3:block}"
@@ -248,7 +248,7 @@
       "description": "Code snippet for an async for statement"
    },
    "async/for/else": {
-      "name": "async/for/else",
+      "prefix": "async/for/else",
       "body": [
          "async for ${1:target} in ${2:iter}:",
          "\t${3:block}",
@@ -258,7 +258,7 @@
       "description": "Code snippet for an async for statement with else"
    },
    "async/with": {
-      "name": "async/with",
+      "prefix": "async/with",
       "body": [
          "async with ${1:expr} as ${2:var}:",
          "\t${3:block}"
@@ -266,35 +266,35 @@
       "description": "Code snippet for an async with statement"
    },
    "ipdb": {
-      "name": "ipdb",
+      "prefix": "ipdb",
       "body": [
          "import ipdb; ipdb.set_trace()"
       ],
       "description": "Code snippet for ipdb debug"
    },
    "pdb": {
-      "name": "pdb",
+      "prefix": "pdb",
       "body": [
          "import pdb; pdb.set_trace()"
       ],
       "description": "Code snippet for pdb debug"
    },
    "pudb": {
-      "name": "pudb",
+      "prefix": "pudb",
       "body": [
          "import pudb; pudb.set_trace()"
       ],
       "description": "Code snippet for pudb debug"
    },
    "add/new/cell": {
-      "name": "add/new/cell",
+      "prefix": "add/new/cell",
       "body": [
          "# %%"
       ],
       "description": "Code snippet to add a new cell"
    },
    "mark/markdown": {
-      "name": "markdown",
+      "prefix": "mark/markdown",
       "body": [
          "# %% [markdown]"
       ],

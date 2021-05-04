@@ -47,7 +47,7 @@ impl Rifle {
 
     pub fn load(&mut self,language: &str,snip_set_name: &str, snippet_data: &str){
     
-        let temp: Loader = toml::from_str(snippet_data.into()).unwrap();
+        let temp: Loader = serde_json::from_str(snippet_data.into()).unwrap();
         let mut snippet_set: Vec<String>= Vec::with_capacity(temp.snippets.len());
         for (snippet_key,snippet) in temp.snippets.iter(){
 
