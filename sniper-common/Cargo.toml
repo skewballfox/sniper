@@ -1,5 +1,5 @@
 [package]
-name = "sniper-client"
+name = "sniper-common"
 version = "0.1.0"
 authors = ["Joshua Ferguson <joshua.ferguson.273@gmail.com>"]
 edition = "2018"
@@ -10,10 +10,12 @@ edition = "2018"
 
 [dependencies]
 futures = "0.3.14"
-serde_json = "1"
+anyhow = "1.0.40"
+tarpc = {version="0.26.2", features = ["tokio1","serde-transport"] }
+#serde_json = "1"
 tokio = {version="1.5.0",features=["net","macros","rt-multi-thread"]}#NOTE: more features may be added (as required)
 tokio-serde={version="0.8",features=["json"]}
-tokio-util={version="0.6.6",features=["codec"]}
+#tokio-util={version="0.6.6",features=["codec"]}
 #dashmap = {version="4.0.2", features=["serde","rayon"]}
 #rayon = {version="1.5"}
 #serde-tuple-vec-map={version="1.0.0"}
@@ -22,3 +24,7 @@ tokio-util={version="0.6.6",features=["codec"]}
 serde = {version="1.0.115", features=["derive"]}
 #toml = {version="0.5", features = ["preserve_order"]}
 #directories = "3.0"
+
+[lib]
+name = "service"
+path = "src/lib.rs"
