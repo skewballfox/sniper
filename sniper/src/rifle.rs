@@ -1,5 +1,6 @@
 #[macro_use]
 use lazy_static::lazy_static;
+use rayon::iter::{IntoParallelIterator,IndexedParallelIterator,ParallelIterator,IntoParallelRefIterator};
 
 use crate::snippet::{Snippet,SnippetSet,Loader};
 
@@ -80,7 +81,30 @@ impl Rifle {
         }
     }
 
-    
+    async fn parse_snippet(&self, language: &str,snippet_name: &str){
+        //NOTE: while having more than one mutable reference inside a dashmap can risk deadlocks when multithreading,
+        //there is no risk associated with multiple immutable ones
+        //therefor I'm splitting the snippet rebuild process into two parts: parse_snippet and build_snippet
+        //parse_snippet will generate metadata for snippet builds(asynchronously) 
+        lazy_static! {
+            static ref digit: Regex = Regex::new(r"[[0-9]&&[^a-zA-Z]]+").unwrap();
+            //TODO: deal with escaped characters such as \$ in bash
+            static ref modification_needed: Regex = Regex::new(r"(\$\{?\d+)|@").unwrap();
+            static ref snippet_finder: Regex = Regex::new("[[a-zA-Z0-9/]&&[^@]]+").unwrap();
+            static ref snippet_args_finder: Regex = Regex::new(r"\(.*\)}").unwrap();
+        }
+        let mut buildData=Vec::with_capacity(self.snippets.get(&(language.into(),snippet_name.to_string())).unwrap().body.len());
+        let mut start=0;
+        let mut end=0;
+        self.snippets.get(&(language.into(),snippet_name.to_string())).unwrap().body.into_par_iter().enumerate().for_each(|(index,line)| {
+            
+            for sub_match in modification_needed.find_iter(&line.clone()){
+                let lead_char=line[sub_match.start()..sub_match.end()].chars().nth(0).unwrap();
+
+            }
+        });
+    }
+    /* 
     fn chamber_snippet(//note this is still not done, but I'm coming back after feedback
         &mut self, 
         language: &str, //the language which is used as half of the key for the snippet
@@ -107,9 +131,11 @@ impl Rifle {
         let mut start=0;
         let mut end=0;
         let mut tabstop_count=offset.clone();
+        let mut match_found=false;
         let mut sub_snippet_args="";
         let body_to_parse=self.snippets.get(&(language.into(),snippet_name.to_string())).unwrap().body.clone();
         body_to_parse.iter().for_each(|line| {
+            match_found=true;
             println!("tabstop count at top of outer loop: {:?}",tabstop_count);
             start=0;
             sub_string=String::with_capacity(line.len());
@@ -161,7 +187,7 @@ impl Rifle {
                         //TODO: find out why the hell start+1 is the actual start of the snippet
                         let sub_snippet_name=&line[end+snippet_indices.start()..end+snippet_indices.end()];
                         println!("{:?}",sub_snippet_name);
-                        start=snippet_indices.end();//ex: @if@elif@else
+                        start=end+snippet_indices.end();//ex: @if@elif@else
                         if self.snippets.contains_key(&(language.into(),sub_snippet_name.to_string())){
                             //NOTE: going off the assumption that a snippet should be in brackets
                             //only if it has tab_args
@@ -197,11 +223,14 @@ impl Rifle {
             
             //nothing worth mentioning was found
 
-            if tabstop_count == 0 && sub_string.is_empty(){
+            if start == 0{//should only happen if no match found
                 assembled_snippet.push(line.to_string())
             } else {
+                
                 sub_string.push_str(&line[start..]);
-                assembled_snippet.push(sub_string.clone());
+                if !sub_string.is_empty(){
+                    assembled_snippet.push(sub_string.clone());
+                }
             }
             start=0;
             
@@ -213,6 +242,6 @@ impl Rifle {
         self.snippets.get_mut(&(language.into(),snippet_name.to_string())).unwrap().body=assembled_snippet.clone();
         self.snippets.get_mut(&(language.into(),snippet_name.to_string())).unwrap().requires_assembly=false;
         return assembled_snippet
-    }
+    }*/
 
 }
