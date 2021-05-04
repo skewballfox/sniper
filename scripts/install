@@ -1,8 +1,8 @@
 #!/usr/bin/bash
 
 #create config directory
-cp -r $(git rev-parse --show-toplevel)/snippets $HOME/.config/sniper
+cp -r $(git rev-parse --show-toplevel)/config/* $HOME/.config/sniper
 
 cd $(git rev-parse --show-toplevel)
 
-cargo build
+#cargo build
