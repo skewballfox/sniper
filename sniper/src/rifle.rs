@@ -9,6 +9,7 @@ use dashmap::DashMap;
 use regex::Regex;
 
 use std::collections::{HashMap};
+use std::sync::{Arc,Mutex};
 //good artist copy, great artist steal
 //https://stackoverflow.com/questions/51344951/how-do-you-unwrap-a-result-on-ok-or-return-from-the-function-on-err
 //TODO: consider using functions defined in above link in util.rs to have easy integration of error handling across sniper
@@ -56,7 +57,30 @@ impl Rifle {
             snippet_set.push(snippet_key.to_owned());
         }
         self.snippet_sets.insert((language.into(),snip_set_name.into()),SnippetSet::new(snippet_set));
-        for key in self.snippets.iter()
+        let mut buildmap=DashMap::with_capacity(snippet_set.len());
+        let q_guard=Arc::new(Mutex::new(PriorityQueue::with_capacity(snippet_set.len())));
+
+        for snippet_name in snippet_set.par_iter(){
+            let snipbuild=self.parse_snippet(language.into(),snippet_name);
+            
+            let mut snipq=q_guard.lock().unwrap();
+
+            if let Some(P)= *snipq.get_priority(snippet_name){
+                *snipq.change_priority(snippet_name,P+1);
+            }else {
+                *snipq.push(snippet_name,0);
+            }
+            
+            for sub_name in snipbuild.sub_snippets.iter()
+                if let Some(P)= *snipq.get_priority(sub_name){
+                    *snipq.change_priority(sub_name,P+1);
+                }else {
+                    *snipq.push(sub_name,0)
+                }
+            buildmap.insert(snippet_name,snipbuild);
+        }
+        
+        
     }
     pub fn unload(&mut self, language: &str, snip_set_to_drop: &str) {
         for snippet_key in self.snippet_sets[&(language.into(),snip_set_to_drop.into())].contents.iter(){
