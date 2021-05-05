@@ -2,6 +2,7 @@ mod config;
 mod target;
 mod sniper;
 mod snippet;
+mod snippetParser;
 mod rifle;
 //mod server;
 //mod server.rs

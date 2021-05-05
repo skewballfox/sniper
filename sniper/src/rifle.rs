@@ -3,7 +3,7 @@ use lazy_static::lazy_static;
 use rayon::iter::{IntoParallelIterator,IndexedParallelIterator,ParallelIterator,IntoParallelRefIterator};
 
 use crate::snippet::{Snippet,SnippetSet,Loader};
-
+use crate::snippetParser::{SnipComponent,SnippetBuildMetadata};
 
 use dashmap::DashMap;
 use regex::Regex;
@@ -69,18 +69,20 @@ impl Rifle {
     pub fn fire(&mut self, language: &str,snippet_name: &str) -> Option<Vec<String>> { 
         if self.snippets.contains_key(&(language.to_string(),snippet_name.to_string())){
             let mut offset=0;
-            let depth=0;
-            let round=self.chamber_snippet(&language,
-                &snippet_name,
-                &mut offset,
-                depth,
-                "");
-            Some(round)
+            let mut depth=0;
+            let snippet=self.chamber_snippet(
+            language, //the language which is used as half of the key for the snippet
+            snippet_name, //the snippet name, which the other half of the key
+            &mut offset, // the value that is used to correct the snippet tabstop
+            depth, //the current function call depth
+            "",//TODO: the arguments supplied to override tabstops
+            );
+            Some(snippet)
         } else {
             None
         }
     }
-
+    /*
     async fn parse_snippet(&self, language: &str,snippet_name: &str){
         //NOTE: while having more than one mutable reference inside a dashmap can risk deadlocks when multithreading,
         //there is no risk associated with multiple immutable ones
@@ -90,21 +92,49 @@ impl Rifle {
             static ref digit: Regex = Regex::new(r"[[0-9]&&[^a-zA-Z]]+").unwrap();
             //TODO: deal with escaped characters such as \$ in bash
             static ref modification_needed: Regex = Regex::new(r"(\$\{?\d+)|@").unwrap();
-            static ref snippet_finder: Regex = Regex::new("[[a-zA-Z0-9/]&&[^@]]+").unwrap();
+            static ref snippet_finder: Regex = Regex::new("[[a-zA-Z0-9/]]+").unwrap();
             static ref snippet_args_finder: Regex = Regex::new(r"\(.*\)}").unwrap();
         }
-        let mut buildData=Vec::with_capacity(self.snippets.get(&(language.into(),snippet_name.to_string())).unwrap().body.len());
+        let mut build_data=Vec::with_capacity(self.snippets.get(&(language.into(),snippet_name.to_string())).unwrap().body.len());
         let mut start=0;
         let mut end=0;
-        self.snippets.get(&(language.into(),snippet_name.to_string())).unwrap().body.into_par_iter().enumerate().for_each(|(index,line)| {
-            
+        let mut sub_snippet_count=0;
+        let mut snippet_stack=Vec::new();
+        self.snippets.get(&(language.into(),snippet_name.to_string())).unwrap().body.into_par_iter().enumerate().for_each(|(line_index,line)| {
+            let mut line_data=Vec::new();
             for sub_match in modification_needed.find_iter(&line.clone()){
                 let lead_char=line[sub_match.start()..sub_match.end()].chars().nth(0).unwrap();
 
+                match lead_char{
+                    '$'=> {
+                        let indices=digit.find(&line[sub_match.start()..sub_match.end()]).unwrap();
+                        line_data.push(SnipComponent::tabstop{start:sub_match.start()+indices.start(),end:sub_match.start()+indices.end()});
+
+                    }
+                    '@'=>{
+                        let indices=snippet_finder.find(&line[end..]).unwrap();
+                        let sub_snippet_name=&line[end+snippet_indices.start()..end+snippet_indices.end()];
+                        snippet_stack.push(sub_snippet_name);
+                        sub_snippet_count+=1;
+                        let sub_snippet_name=&line[sub_match.end()+indices.start()..sub_match.end()+indices.end()];
+                        line_data.push(SnipComponent::sub_snippet{start:sub_match.end()+indices.start(),end:sub_match.end()+indices.end(),name=sub_snippet_name});
+                    }
+                    _=>{
+                        panic!("Zoinks Scoob! That wasn't supposed to happen");
+                    }
+
+                }
             }
+            build_data[line_index]=line_data;
         });
+
+        new::SnippetBuildMetadata(snippet_name,sub_snippet_count)
     }
-    /* 
+
+    fn build_snippet(&mut self, language: &str, build_data: Vec<SnippetBuildMetadata>) {
+
+    }*/
+    
     fn chamber_snippet(//note this is still not done, but I'm coming back after feedback
         &mut self, 
         language: &str, //the language which is used as half of the key for the snippet
@@ -242,6 +272,6 @@ impl Rifle {
         self.snippets.get_mut(&(language.into(),snippet_name.to_string())).unwrap().body=assembled_snippet.clone();
         self.snippets.get_mut(&(language.into(),snippet_name.to_string())).unwrap().requires_assembly=false;
         return assembled_snippet
-    }*/
+    }
 
 }
