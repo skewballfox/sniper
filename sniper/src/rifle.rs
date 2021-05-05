@@ -56,7 +56,7 @@ impl Rifle {
             snippet_set.push(snippet_key.to_owned());
         }
         self.snippet_sets.insert((language.into(),snip_set_name.into()),SnippetSet::new(snippet_set));
-        
+        for key in self.snippets.iter()
     }
     pub fn unload(&mut self, language: &str, snip_set_to_drop: &str) {
         for snippet_key in self.snippet_sets[&(language.into(),snip_set_to_drop.into())].contents.iter(){
