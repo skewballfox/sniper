@@ -26,4 +26,5 @@ lazy_static= "1.4.0"
 serde = {version="1.0.115", features=["derive"]}
 toml = {version="0.5", features = ["preserve_order"]}#NOTE: will likely be removed soon, planning move to json for snippets
 directories = "3.0"
+priority_queue="1.1.1"
 umask="1.0.0"
