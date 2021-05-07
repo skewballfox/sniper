@@ -65,6 +65,22 @@ impl Rifle {
         self.snippet_sets.remove(&(language.into(),snip_set_to_drop.into()));
     }
     
+    
+
+    //TODO: probably need to change the output format
+    pub fn fire(&mut self, language: &str,snippet_name: &str) -> Option<Vec<String>> {
+        let snippet_key=&(language.to_string(),snippet_name.to_string()); 
+        println!("{:?} requested",snippet_name);
+        if self.snippets.contains_key(snippet_key){
+            if self.snippets.get(snippet_key).unwrap().requires_assembly{
+                self.rebuild_snippets(language,snippet_name.into());
+            }
+            Some(self.snippets.get(snippet_key).unwrap().body.clone())
+        } else {
+            None
+        }
+    }
+
     fn rebuild_snippets(&mut self, language: &str, snippet_name: String){
         
         let mut snippet_stack=VecDeque::new();
@@ -91,20 +107,6 @@ impl Rifle {
         while let  Some(build_data) = build_stack.pop_back(){
             
             self.build_snippet(language, build_data);
-        }
-    }
-
-    //TODO: probably need to change the output format
-    pub fn fire(&mut self, language: &str,snippet_name: &str) -> Option<Vec<String>> {
-        let snippet_key=&(language.to_string(),snippet_name.to_string()); 
-        println!("{:?} requested",snippet_name);
-        if self.snippets.contains_key(snippet_key){
-            if self.snippets.get(snippet_key).unwrap().requires_assembly{
-                self.rebuild_snippets(language,snippet_name.into());
-            }
-            Some(self.snippets.get(snippet_key).unwrap().body.clone())
-        } else {
-            None
         }
     }
     
