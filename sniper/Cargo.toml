@@ -24,7 +24,6 @@ serde-tuple-vec-map={version="1.0.0"}
 regex= {version="1.4.6"}
 lazy_static= "1.4.0"
 serde = {version="1.0.115", features=["derive"]}
-toml = {version="0.5", features = ["preserve_order"]}#NOTE: will likely be removed soon, planning move to json for snippets
+toml = {version="0.5", features = ["preserve_order"]}#NOTE: still used for config
 directories = "3.0"
-priority_queue="1.1.1"
 umask="1.0.0"

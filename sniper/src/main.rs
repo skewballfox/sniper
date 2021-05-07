@@ -16,6 +16,7 @@ fn main() {
     println!("{:#?}",sniper_session.rifle.snippets);
     println!("{:?}",sniper_session.config.languages["python"]);
     println!("{:#?}",sniper_session.snipe("python","if/elif/else"));
+    println!("{:#?}",sniper_session.snipe("python","if"));
     sniper_session.add_target("12345","test.py","python");
     
     //println!("{:?}",config)

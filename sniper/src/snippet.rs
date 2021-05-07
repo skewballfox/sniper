@@ -34,6 +34,8 @@ pub struct Snippet {
     actions: Vec<Actions>,
     #[serde(default = "assembly_required")]
     pub(crate) requires_assembly:bool,
+    #[serde(default="currently_empty")]
+    pub(crate) tabstops:Vec<(usize,usize,usize)>
 }
 
 fn default_snippet_type() -> SnippetTypes {
@@ -49,6 +51,9 @@ fn no_action() -> Vec<Actions> {
 }
 fn assembly_required() -> bool {
     true
+}
+fn currently_empty() -> Vec<(usize,usize,usize)> {
+    Vec::new()
 }
 
 #[derive(Deserialize, Clone, Debug)]
