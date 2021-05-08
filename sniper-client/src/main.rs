@@ -15,7 +15,10 @@ pub async fn main() {
     let test_uri="test.py";
     let lang="python";
 
-    let socket = UnixStream::connect("sniper.socket").await.unwrap();
+    let socket = match UnixStream::connect("/tmp/sniper.socket").await {
+        Ok(conn) => conn,
+        _ => unreachable!(),
+    };
 
     // Delimit frames using a length header
     let length_delimited = FramedWrite::new(socket, LengthDelimitedCodec::new());
