@@ -854,6 +854,8 @@ dependencies = [
  "futures",
  "serde",
  "serde_json",
+ "sniper-common",
+ "tarpc",
  "tokio",
  "tokio-serde",
  "tokio-util",
@@ -896,6 +898,7 @@ dependencies = [
 name = "sniper-server"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "dashmap",
  "directories",
  "futures",
