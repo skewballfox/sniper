@@ -1,22 +1,28 @@
-use std::{path::PathBuf, sync::Arc};
+use std::{path::{Path, PathBuf}, sync::Arc};
 
 use futures::lock::Mutex;
 use service::SniperService;
-use tarpc::context;
-use tokio::net::{UnixListener, UnixStream};
+use tarpc::{
+    context,
+    server::{self, Incoming, Channel},
+    tokio_serde::formats::Json,
+};
+use tokio::net::{unix::SocketAddr};
 
 use crate::sniper::Sniper;
 
 #[derive(Clone)]
 pub(crate) struct ConnectionHandler{
-    socket_address: PathBuf,
+    //socket_address: PathBuf,
     pub(crate) sniper_mutex: Arc<Mutex<Sniper>>,
 }
 
 
 impl ConnectionHandler {
-    fn new(socket_address: PathBuf, sniper_mutex: Arc<Mutex<Sniper>>) -> Self { 
-        Self { socket_address,sniper_mutex } 
+    pub fn new( sniper_mutex: Arc<Mutex<Sniper>>) -> Self { 
+        Self { 
+            //socket_address: PathBuf::from(client_socket_addr),
+            sniper_mutex } 
     }
 }
 #[tarpc::server]
