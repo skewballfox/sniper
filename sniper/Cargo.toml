@@ -7,9 +7,9 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 #[build-dependencies]
 
-#[[bin]]
-#name="sniper"
-#path="main.rs"
+[[bin]]
+name="sniper"
+path="src/main.rs"
 
 [dependencies]
 sniper-common={path="../sniper-common"}
