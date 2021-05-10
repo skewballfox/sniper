@@ -38,9 +38,9 @@ async fn main()  {
             let transport = serde_transport::new(framed_stream,Json::default());
             let sniper_server=ConnectionHandler::new(sniper.clone());
             let fut = server::BaseChannel::with_defaults(transport).execute(sniper_server.serve());
-            tokio::spawn(fut);
+            tokio::spawn(fut).await.unwrap();
         }
-    });
+    }).await.unwrap();
     
     
 

@@ -24,13 +24,14 @@ pub async fn main(){
     //SniperServiceClient;
     let transport = serde_transport::new(codec_builder.new_framed(conn), Json::default());
     let client=SniperServiceClient::new(Default::default(),transport).spawn();
-    
+    println!("starting first request");
     //let requests= async move {
-        client.add_target(tarpc::context::current(),session_id.to_string(),test_uri.to_string(),lang.to_string()).await;
+        client.add_target(tarpc::context::current(),session_id.to_string(),test_uri.to_string(),lang.to_string());
 
-        let snippet=client.get_snippet(tarpc::context::current(),lang.to_string(),"if/elif/else".to_string()).await;
+        println!("requesting snippet");
+        let snippet=client.get_snippet(tarpc::context::current(),lang.to_string(),"if/elif/else".to_string());
         
-        println!("{:?}",snippet);
+        println!("{:?}",snippet.await);
         
     //}
         //println!("{:?}",snippet);
