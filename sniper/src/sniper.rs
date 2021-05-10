@@ -1,9 +1,12 @@
+use service::SniperService;
+
 use crate::config::SniperConfig;
 use crate::target::TargetData;
 use crate::rifle::Rifle;
 
-use dashmap::DashMap;
-use rayon::prelude::*;
+
+
+
 use std::collections::{HashMap};
 
 
@@ -72,7 +75,8 @@ impl Sniper {
     /// drop a target,
     /// drop a snippet set if no longer required by any targets
     /// exit sniper if no targets left
-    fn drop_target(&mut self, session_id: &str,uri: &str, language: &str){
+    pub(crate) fn drop_target(&mut self, session_id: &str,uri: &str,language:&str){
+        let target_key=&(session_id.to_string(),uri.to_string());
         
         if self.targets.contains_key(&(session_id.into(),uri.into())){
             //consider using drain filter in the future:
@@ -82,7 +86,7 @@ impl Sniper {
         
                     let drop_snippets_flag=self.rifle.snippet_sets.get_mut(&(language.into(),snip_set.into())).unwrap().decrement_target_count();
                     if drop_snippets_flag {
-                        self.rifle.unload(language.into(),snip_set)
+                        self.rifle.unload(&language,snip_set)
                     }
                 }
             }
