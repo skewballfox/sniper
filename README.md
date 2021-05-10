@@ -4,17 +4,26 @@ the core component of a sniper: cross-editor snippet manager.
 
 **WARNING**: this is very early, and implementation details will definitely change as I work to implement this in vscode. 
 
+- here's what is left to do before it's ready for it's first actual release:
+  - [ ] refactor server code to be more async friendly
+  - [ ] implement missing basic server calls(such as `get_triggers`)
+  - [ ] implement first client lib for javascript/typescript with neon
+  - [ ] implement in vscode with sniper-node
+
 ## Description 
 
-
-Sniper is an editor agnostic snippet manager. The snippet syntax will be a superset of that defined by the [LSP's snippet syntax specification](https://github.com/microsoft/language-server-protocol/blob/master/snippetSyntax.md), currently existing snippets will require a slight reordering(organized by prefix/trigger rather than name), but I'm likely to change back to being organized by name rather than trigger. This, among a few other changes would allow existing vscode snippets to be used.
+Sniper is an editor agnostic snippet manager. The snippet syntax is currently superset of that defined by the [LSP's snippet syntax specification](https://github.com/microsoft/language-server-protocol/blob/master/snippetSyntax.md). While right now the snippet directory is static (located at `~/.config/sniper`), this means existing vscode snippets are compatible.
 
 The project is composed of different components:
 
 ### Found here
-
+- **sniper-common**
+  - defines the RPC that is used by the server and all client implementations
+  - will also likely store some common client functionality
 - **Sniper**
-  - the daemonized application
+  - the backend-server
+  - communicates with client over unix domain socket
+  - started automatically on first client request thanks to systemd
   - handles deserialization and storage of snippets
   - handles tracking of what snippets are grouped together
   - defines logic for state handling
