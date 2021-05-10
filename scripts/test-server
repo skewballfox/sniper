@@ -1,0 +1,8 @@
+#!/usr/bin/bash
+
+proj_home=$(git rev-parse --show-toplevel)
+(cd $proj_home/sniper && cargo build)
+(cd $proj_home/sniper-client && cargo build)
+bin_path="$proj_home/target/debug"
+systemd-run --user --socket-property=ListenStream=/tmp/sniper.socket --socket-property=NoDelay=true $bin_path/sniper-server
+#echo $bin_path
