@@ -17,16 +17,16 @@ pub trait SniperService {
     
     /// drop a target,
     /// drop a snippet set if no longer required by any targets
-    async fn drop_target(session_id: String, uri: String);
+    async fn drop_target(session_id: String, uri: String, language: String);
     
     ///add a snippet set to the given target
-    async fn target_add_libs(session_id: String, uri: String, libs: Vec<String>);
+    //async fn target_add_libs(session_id: String, uri: String, libs: Vec<String>);
     
     ///drop a snippet set for a given target
-    async fn target_drop_libs(session_id: String, uri: String, libs: Vec<String>);
+    //async fn target_drop_libs(session_id: String, uri: String, libs: Vec<String>);
     
     /// get the triggers for the snippets associated with a given target
-    async fn get_triggers(session_id: String, uri: String)-> Vec<String>;
+    //async fn get_triggers(session_id: String, uri: String)-> Vec<String>;
     
     /// get a snippet
     async fn get_snippet(language: String, snippet_key: String) -> Vec<String>;

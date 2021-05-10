@@ -1,0 +1,6 @@
+[Unit]
+Description=Server for sniper
+
+[Service]
+ExecStart=%h/.local/bin/sniper
+NonBlocking=True

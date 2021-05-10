@@ -1,0 +1,10 @@
+[Unit]
+Description=Socket for example service
+
+[Socket]
+# In this example we only listen on localhost
+ListenStream=/tmp/sniper.socket
+NoDelay=true
+
+[Install]
+WantedBy=sockets.target

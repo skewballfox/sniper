@@ -80,7 +80,7 @@ impl Rifle {
             None
         }
     }
-
+    //pub fn get_triggers(self, language, snippet_name);
     fn rebuild_snippets(&mut self, language: &str, snippet_name: String){
         
         let mut snippet_stack=VecDeque::new();
