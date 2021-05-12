@@ -97,3 +97,28 @@ impl SnippetSet {
     }
 
 }
+
+//for rebuilding snippets
+#[derive(Debug)]
+pub(crate) struct SnippetBuildMetadata {
+    pub(crate)name: String,
+    pub(crate)sub_snippet_count: usize,
+    //pub(crate)tabstops: Vec<(usize,usize,usize)>,
+    pub(crate)body: Vec<Vec<SnipComponent>>,
+}
+#[derive(Debug)]
+pub(crate) enum SnipComponent {
+    tabstop {start: usize, end: usize},
+    metatabstop(u32,u32),
+    sub_snippet{start: usize,end: usize, name: String},
+}
+
+impl SnippetBuildMetadata {
+    pub(crate) fn new(name: String,sub_snip_count:usize,body: Vec<Vec<SnipComponent>>)->Self {
+        Self {
+            name: name,
+            sub_snippet_count: sub_snip_count,
+            body: body,
+        }
+    }
+}

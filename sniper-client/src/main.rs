@@ -28,16 +28,17 @@ pub async fn main()-> anyhow::Result<()>{
     let client=SniperServiceClient::new(Default::default(),transport).spawn();
     println!("starting first request");
     //let requests= async move {
-        client.add_target(tarpc::context::current(),session_id.to_string(),test_uri.to_string(),lang.to_string()).await;
-        println!("sleeping");
-        std::thread::sleep(Duration::from_secs(5));
-        println!("requesting snippet");
-        let snippet=client.get_snippet(tarpc::context::current(),lang.to_string(),"if/elif/else".to_string());
-        
-        println!("{:?}",snippet.await);
-        
-    //}
-    opentelemetry::global::shutdown_tracer_provider();
+    client.add_target(tarpc::context::current(),session_id.to_string(),test_uri.to_string(),lang.to_string()).await;
+    println!("sleeping");
+    //std::thread::sleep(Duration::from_secs(5));
+    println!("requesting snippet");
+    let snippet=client.get_snippet(tarpc::context::current(),lang.to_string(),"if/elif/else".to_string());
+    
+    println!("{:?}",snippet.await);
+    let triggers=client.get_triggers(tarpc::context::current(),session_id.to_string(),test_uri.to_string());
+    println!("{:?}",triggers.await);
+
+    //opentelemetry::global::shutdown_tracer_provider();
     Ok(())
     
 }
