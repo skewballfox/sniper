@@ -11,7 +11,7 @@ pub struct TargetSession {
 #[derive(Debug)]
 pub struct TargetData {
     
-    language: String,
+    pub(crate) language: String,
     //should these go here?
     pub(crate) loaded_snippets: HashSet<String>,
     //disabled_snippets: DashSet<String>,

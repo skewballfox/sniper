@@ -98,4 +98,11 @@ impl Sniper {
         }
     }
 
+    pub fn get_triggers(self,session_id: &str,uri: &str)-> Vec<String> {
+        let language=self.targets.get(&(session_id.to_string(),uri.to_string())).unwrap().language.clone();
+        let sets=self.targets.get(&(session_id.to_string(),uri.to_string()))
+        .unwrap().loaded_snippets.clone().into_iter().collect();
+        self.rifle.get_triggers(&language, sets)
+    }
+
 }
