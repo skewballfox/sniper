@@ -42,7 +42,7 @@ async fn main()  -> anyhow::Result<()>{
         let fut = server::BaseChannel::with_defaults(transport).execute(sniper_server.serve());
         println!("processing first request");
         tokio::spawn(fut).await;
-        }
+    }
     
     
     Ok(())

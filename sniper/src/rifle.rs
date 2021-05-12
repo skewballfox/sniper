@@ -65,7 +65,17 @@ impl Rifle {
         self.snippet_sets.remove(&(language.into(),snip_set_to_drop.into()));
     }
     
-    
+    pub fn get_triggers(self, language: &str, snippet_sets: Vec<String>) -> Vec<String> {
+        let mut triggers_to_get=Vec::new();
+        let mut triggers=Vec::new();
+        for set in snippet_sets.iter(){
+            triggers_to_get.append(&mut self.snippet_sets.get(&(language.into(),set.into())).unwrap().contents.clone());
+        }
+        for snippet in triggers_to_get.iter(){
+            triggers.push(self.snippets.get(&(language.into(),snippet.into())).unwrap().prefix.clone());
+        }
+        triggers
+    }
 
     //TODO: probably need to change the output format
     pub fn fire(&mut self, language: &str,snippet_name: &str) -> Option<Vec<String>> {
