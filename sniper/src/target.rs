@@ -1,5 +1,7 @@
 
 use std::collections::{HashSet};
+
+use dashmap::DashSet;
 //use std::hash::{Hash,Hasher};
 //NOTE: may not be necessary, may wind up getting rid of this
 /*
@@ -13,7 +15,7 @@ pub struct TargetData {
     
     pub(crate) language: String,
     //should these go here?
-    pub(crate) loaded_snippets: HashSet<String>,
+    pub(crate) loaded_snippets: DashSet<String>,
     //disabled_snippets: DashSet<String>,
     //NOTE: probably unnecessary to track this here, given SnippetSets tracks dependant targets
     //snippet_sets: Vec<String>,
@@ -26,7 +28,7 @@ impl TargetData {
             
             language: language.to_string(),
             
-            loaded_snippets: HashSet::new(),
+            loaded_snippets: DashSet::new(),
             //should these go here?
             //snippet_triggers: DashMap::new(),
             //disabled_snippets: DashSet::new(),
