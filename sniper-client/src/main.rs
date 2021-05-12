@@ -5,7 +5,7 @@ use futures::prelude::*;
 use serde_json::json;
 use tokio::net::UnixStream;
 use tokio_serde::formats::*;
-use service::{SniperServiceClient, init_tracing};
+use sniper_common::service::{SniperServiceClient, init_tracing};
 use tarpc::{client, context, serde_transport, tokio_serde::formats::Json, transport};
 use tokio_util::codec::{FramedWrite, LengthDelimitedCodec};
 
@@ -14,24 +14,20 @@ use tokio_util::codec::{FramedWrite, LengthDelimitedCodec};
 pub async fn main()-> anyhow::Result<()>{
     println!("Hello from sniper client!");
     // Bind a server socket
-    init_tracing("Sniper test Client")?;
+    //init_tracing("Sniper test Client")?;
     let session_id="12345";
     let test_uri="test.py";
     let lang="python";
-    let socket_path="/tmp/sniper.socket";
     
-    let mut codec_builder=LengthDelimitedCodec::builder();
-    let conn = UnixStream::connect(socket_path).await.unwrap();
-    let framed_stream=codec_builder.new_framed(conn);
+    let client=sniper_common::client::init_client().await;
     
-    let transport = serde_transport::new(framed_stream, Json::default());
-    let client=SniperServiceClient::new(Default::default(),transport).spawn();
     println!("starting first request");
     //let requests= async move {
     client.add_target(tarpc::context::current(),session_id.to_string(),test_uri.to_string(),lang.to_string()).await;
     println!("sleeping");
     //std::thread::sleep(Duration::from_secs(5));
     println!("requesting snippet");
+    
     let snippet=client.get_snippet(tarpc::context::current(),lang.to_string(),"if/elif/else".to_string());
     
     println!("{:?}",snippet.await);

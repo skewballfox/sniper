@@ -855,6 +855,7 @@ dependencies = [
  "tarpc",
  "tokio",
  "tokio-serde",
+ "tokio-util",
  "tracing",
  "tracing-opentelemetry",
  "tracing-subscriber",

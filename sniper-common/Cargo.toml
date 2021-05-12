@@ -6,14 +6,17 @@ edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 #[build-dependencies]
-
+[features]
+default=[]
+client=["tokio/net","tokio-util"]
 
 [dependencies]
 futures = "0.3.14"
 anyhow = "1.0.40"
 tarpc = {version="0.26.2", features = ["tokio1","serde-transport"] }
 #serde_json = "1"
-tokio = {version="1.5.0",features=["net","macros","rt-multi-thread"]}#NOTE: more features may be added (as required)
+tokio = {version="1.5.0",features=["macros","rt-multi-thread"]}#NOTE: more features may be added (as required)
+tokio-util={version="0.6.6",features=["codec"],optional=true}
 tokio-serde={version="0.8",features=["json"]}
 #tokio-util={version="0.6.6",features=["codec"]}
 #dashmap = {version="4.0.2", features=["serde","rayon"]}
@@ -31,5 +34,5 @@ opentelemetry-jaeger = { version = "0.12", features = ["tokio"] }
 tracing-subscriber = "0.2"
 
 [lib]
-name = "service"
+name = "sniper_common"
 path = "src/lib.rs"

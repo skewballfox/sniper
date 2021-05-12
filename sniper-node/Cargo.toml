@@ -19,6 +19,8 @@ neon-build = "0.8.0"
 #walkdir = "2.3.1"
 
 [dependencies]
+sniper-common={path="../sniper-common",features=["client"]}
+
 #sniper-core = { git = "https://github.com/skewballfox/Sniper-Core", branch="main" }
 
 [dependencies.neon]
