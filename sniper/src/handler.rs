@@ -30,6 +30,7 @@ impl SniperService for ConnectionHandler {
     //type AddTargetFut = Type<>;
     async fn add_target(self,_:context::Context, session_id: String, uri: String, language: String) {
         let mut sniper=self.sniper_mutex.lock().await;
+        println!("what does this do");
         sniper.add_target(&session_id, &uri, &language);
     }
 
@@ -52,6 +53,6 @@ impl SniperService for ConnectionHandler {
     */
     async fn get_snippet(self,_:context::Context,language: String, snippet_key: String) -> Vec<String> {
         let mut sniper=self.sniper_mutex.lock().await;
-        sniper.snipe( &language, &language).unwrap()
+        sniper.snipe( &language, &snippet_key).unwrap()
     }
 }
