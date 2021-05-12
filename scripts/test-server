@@ -1,8 +1,11 @@
 #!/usr/bin/bash
+#NOTE: don't use this (right now), currently having issues with all request
+#timing out when activating the server via a systemd socket
 
+#currently just running the server directly
 proj_home=$(git rev-parse --show-toplevel)
 (cd $proj_home/sniper && cargo build)
 (cd $proj_home/sniper-client && cargo build)
 bin_path="$proj_home/target/debug"
-systemd-run --user --socket-property=ListenStream=/tmp/sniper.socket --socket-property=NoDelay=true $bin_path/sniper-server
+systemd-run --user --socket-property=ListenStream=/tmp/sniper.socket --socket-property=NoDelay=true $bin_path/sniper
 #echo $bin_path

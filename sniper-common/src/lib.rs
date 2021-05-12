@@ -1,4 +1,6 @@
 
+use std::env;
+
 use futures::{
     future::{self, Ready},
     prelude::*,
@@ -7,6 +9,7 @@ use tarpc::{
     client, context,
     server::{self, Incoming},
 };
+use tracing_subscriber::{fmt::format::FmtSpan, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt};
 #[tarpc::service]
 pub trait SniperService {
     //NOTE: may simplify the api once client is implemented, such as removing
@@ -31,4 +34,22 @@ pub trait SniperService {
     /// get a snippet
     async fn get_snippet(language: String, snippet_key: String) -> Vec<String>;
     
+}
+
+/// Initializes an OpenTelemetry tracing subscriber with a Jaeger backend.
+pub fn init_tracing(service_name: &str) -> anyhow::Result<()> {
+    env::set_var("OTEL_BSP_MAX_EXPORT_BATCH_SIZE", "12");
+
+    let tracer = opentelemetry_jaeger::new_pipeline()
+        .with_service_name(service_name)
+        .with_max_packet_size(2usize.pow(13))
+        .install_batch(opentelemetry::runtime::Tokio)?;
+
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::from_default_env())
+        .with(tracing_subscriber::fmt::layer().with_span_events(FmtSpan::NEW | FmtSpan::CLOSE))
+        .with(tracing_opentelemetry::layer().with_tracer(tracer))
+        .try_init()?;
+
+    Ok(())
 }
