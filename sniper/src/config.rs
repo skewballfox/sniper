@@ -26,14 +26,7 @@ fn not_initialized()->bool{
     false
 }
 
-#[derive(Debug)]
-pub struct SnippetSet {
-    /// tracks the set each group of snippets belong to, as well as
-    /// which targets require them
-    contents: Vec<String>,
-    //TODO: may want to add methods on all structs using weak to occasionally clean references
-    target_counter: i32,
-}
+
 
 #[derive(Deserialize, Clone, Debug)]
 struct Loader {
