@@ -7,7 +7,7 @@ use std::os::unix::net::UnixStream;
 
 
 struct SniperNode {
-    connection: sock,
+    sniper: SniperServiceClient,
 }
 impl Finalize for SniperNode {}
 
@@ -15,27 +15,45 @@ impl Finalize for SniperNode {}
 //TODO: needs some kind of target blacklist for situation
 //where target isn't viable
 
-fn start_sniper(mut cx: FunctionContext) -> JsResult<SniperNode> {
-    ///either connect to existing sniper session or start sniper session
-    println!('todo');
-    let language = cx.argument::<JsString>(1).unwrap().value(&mut cx);
-    //good artist copy, great artist steal
-    //https://github.com/kak-lsp/kak-lsp/blob/master/src/main.rs#L209
-    if let Ok(mut stream) = UnixStream::connect(&path) {
-        stream
-            .write_all(&input)
-            .expect("Failed to send stdin to server");
-    } else {
-        spin_up_server(&input);
-    }
-}
+
     //let config_path = cx.argument::<JsString>(0)?.value(&mut cx);
     //Ok(cx.boxed(SniperNode { sniper:Sniper::new(&config_path) }))
 
+async fn connect(mut cx: FunctionContext) -> JsResult<JsBox<SniperNode>>{
+    Ok(cx.boxed(SniperNode{
+        sniper:snipper_common::client::init_client()
+    }))
+}
+async fn add_target(mut cx: FunctionContext){
+    let client = cx.argument::<JsBox<SniperNode>>(0)?;
+    let session_id= cx.argument::<JsBox<JsString>>(1)?.value(&mut cx);
+    let uri= cx.argument::<JsBox<JsString>>(2)?.value(&mut cx);
+    let language= cx.argument::<JsBox<JsString>>(3)?.value(&mut cx); 
+    client.add_target(session_id, uri, language).await
+}
 
-fn get_snippet(mut cx: FunctionContext) -> JsResult<JsString> {
+async fn drop_target(mut cx: FunctionContext){
+    let client = cx.argument::<JsBox<SniperNode>>(0)?;
+    let session_id= cx.argument::<JsBox<JsString>>(1)?.value(&mut cx);
+    let uri= cx.argument::<JsBox<JsString>>(2)?.value(&mut cx);
+    let language= cx.argument::<JsBox<JsString>>(3)?.value(&mut cx); 
+    client.add_target(session_id, uri, language).await
+}
+
+async fn get_triggers(mut cx: FunctionContext) -> Vec<String>{
+    let client = cx.argument::<JsBox<SniperNode>>(0)?;
+    let session_id= cx.argument::<JsBox<JsString>>(1)?.value(&mut cx);
+    let uri= cx.argument::<JsBox<JsString>>(2)?.value(&mut cx);
+    
+}
+
+async fn get_snippet(mut cx: FunctionContext) -> JsResult<JsString> {
     ///once snippet has been matched, get snippet from sniper
-    println!('todo');
+    let client = cx.argument::<JsBox<SniperNode>>(0)?;
+    let language= cx.argument::<JsBox<JsString>>(1)?.value(&mut cx);
+    let snippet_key= cx.argument::<JsBox<JsString>>(2)?.value(&mut cx);
+    client.get_snippet(session_id, uri, language).await
+
 }
 
 

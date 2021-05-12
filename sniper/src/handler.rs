@@ -2,14 +2,15 @@ use std::sync::Arc;
 
 use dashmap::DashMap;
 use futures::lock::Mutex;
-use service::SniperService;
+
+use sniper_common::service::SniperService;
 use tarpc::{
     context,
     server::{self, Incoming, Channel},
 };
 
 
-use crate::{config::SniperConfig, sniper::{self, Sniper}, target::TargetData};
+use crate::{config::SniperConfig, sniper::Sniper, target::TargetData};
 
 #[derive(Clone)]
 pub(crate) struct Spotter {

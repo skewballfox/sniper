@@ -9,7 +9,7 @@ mod handler;
 
 use config::SniperConfig;
 use dashmap::DashMap;
-use service::{init_tracing,SniperService};
+use sniper_common::service::{init_tracing,SniperService};
 use sniper::Sniper;
 //mod server;
 //mod server.rs
@@ -28,9 +28,8 @@ use crate::handler::Spotter;
 #[tokio::main]//(flavor="current_thread")]
 async fn main() {
     
-    let socket_path=PathBuf::from("/tmp/sniper.socket");
-    let _ = std::fs::remove_file(socket_path.clone());
-    let listener = UnixListener::bind(socket_path).unwrap();
+    let _ = std::fs::remove_file(sniper_common::SOCKET_PATH);
+    let listener = UnixListener::bind(sniper_common::SOCKET_PATH).unwrap();
     
     let mut codec_builder=LengthDelimitedCodec::builder();
     
@@ -47,7 +46,4 @@ async fn main() {
         println!("processing request");
         tokio::spawn(fut).await;
     }
-    
-    
-   
 }
