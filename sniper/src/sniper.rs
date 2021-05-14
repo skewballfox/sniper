@@ -14,20 +14,18 @@ use crate::{snippet::{Loader, Snippet, SnippetSet,SnipComponent, SnippetBuildMet
 use std::{borrow::Cow, collections::VecDeque, sync::{Mutex,Arc}};
 
 
-#[derive(Debug,Clone)]
+#[derive(Debug)]
 pub struct Sniper {
 
-    //was in rifle
-    pub(crate) snippets: Arc<DashMap<(String,String),Snippet>>,
-    pub(crate) snippet_sets: Arc<DashMap<(String,String),SnippetSet>>,
+    pub(crate) snippets: DashMap<(String,String),Snippet>,
+    pub(crate) snippet_sets: DashMap<(String,String),SnippetSet>,
 }
 
 impl Sniper {
     pub fn new() -> Self {
         Self {
-            //was in rifle.new()
-            snippets: Arc::new(DashMap::new()),
-            snippet_sets: Arc::new(DashMap::new())
+            snippets: DashMap::new(),
+            snippet_sets: DashMap::new()
         }
     }
     
@@ -207,13 +205,6 @@ impl Sniper {
         self.snippets.get_mut(snippet_key).unwrap().requires_assembly=false;
         println!("snippet modified");
     }
-    
-    
-    
-    
-    /*fn rebuild_snippet(&mut self, language: &str, snippet: &mut Snippet) -> Snippet {
-        unimplemented!();
-    }*/
     
 
     

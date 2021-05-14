@@ -26,4 +26,4 @@ sniper-common={path="../sniper-common",features=["client"]}
 [dependencies.neon]
 version = "0.8.0"
 default-features = false
-features = ["napi-4"]
+features = ["napi-6","event-queue-api"]
