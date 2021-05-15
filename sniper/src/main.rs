@@ -43,7 +43,7 @@ async fn main() {
         let transport = serde_transport::new(framed_stream,Json::default());
         let sniper_server = Spotter::new(config.clone(),targets.clone(),sniper.clone());
         let fut = server::BaseChannel::with_defaults(transport).execute(sniper_server.serve());
-        println!("processing request");
+        println!("request recieved");
         tokio::spawn(fut).await;
     }
 }

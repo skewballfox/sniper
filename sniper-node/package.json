@@ -10,8 +10,10 @@
   },
   "author": "Joshua Ferguson <joshua.ferguson.273@gmail.com>",
   "license": "Apache-2.0",
-  "dependencies": {},
+  "dependencies": {
+  },
   "devDependencies": {
+    "@types/node": "^15.0.3",
     "eslint": "^7.12.1"
   },
   "scripts": {

@@ -16,7 +16,6 @@ use crate::{config::SniperConfig, sniper::Sniper, target::TargetData};
 pub(crate) struct Spotter {
     pub(crate) config: Arc<Mutex<SniperConfig>>,
     pub(crate) targets: Arc<DashMap<(String,String),TargetData>>,
-    //socket_address: PathBuf,
     pub(crate) sniper_lock: Arc<tokio::sync::RwLock<Sniper>>,
 }
 
@@ -134,20 +133,32 @@ impl SniperService for Spotter{
     
     async fn get_snippet(self,_:context::Context,language: String, snippet_name: String) -> Option<Vec<String>> {
         let snippet_key=&(language.to_string(),snippet_name.to_string());
-        let mut sniper=self.sniper_lock.write().await; 
-        //let mut assembly_required=false;
+        let sniper=self.sniper_lock.read().await; 
+        let mut assembly_required=false;
+        let mut not_found=false;
+        let mut snippet_body=Vec::new();
         println!("{:?} requested",snippet_name);
-        if sniper.snippets.contains_key(snippet_key){
+        if sniper.snippets.contains_key(snippet_key) {
             if sniper.snippets.get(snippet_key).unwrap().requires_assembly{
-                //let mut sniper=self.sniper_lock.write().await;
-                sniper.rebuild_snippets(&language,snippet_name.into());
-                
+                assembly_required=true;
+            } else {
+                snippet_body=sniper.snippets.get(snippet_key).unwrap().body.clone()
             }
-    
-            
-            Some(sniper.snippets.get(snippet_key).unwrap().body.clone())
         } else {
+            not_found=true;
+        }
+        drop(sniper);
+        if not_found {
             None
+        } else {
+            
+            if assembly_required {
+                //only acquire writelock when necessary
+                let mut sniper=self.sniper_lock.write().await;
+                sniper.rebuild_snippets(&language,snippet_name.into());
+                snippet_body=sniper.snippets.get(snippet_key).unwrap().body.clone();
+            }
+            Some(snippet_body)
         }
     }
 }
