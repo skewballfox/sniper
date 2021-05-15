@@ -1,18 +1,50 @@
 // /"use strict";
-import addon, { startSniper } from '../index.node';
+const {promisify}=require('util');
+const SniperClient= require('../index.node');
+//const connectAsync=promisify(connectSniper);
+
 
 //const { Sniper } = addon;
-class Sniper {
-    constructor(config) {
-        this.boxed = startSniper(config);
-    }
-}
-let x = new Sniper("snippets");
+function sleep(milliseconds) {
+    const date = Date.now();
+    let currentDate = null;
+    do {
+      currentDate = Date.now();
+    } while (currentDate - date < milliseconds);
+  }
 
-console.log(x)
-console.log(typeof (x));
+
+
+SniperClient.init();
+sleep(2000)
+SniperClient.add_target("12345","test.py","python");
+sleep(2000)
+
+//console.log();
+// const { promisify } = require("util");
+
+// const { connectSniper } = require("../index.node");
+
+// const connectAsync = promisify(connectSniper);
+
+// Example
+// (async () => {
+//     const node = await connectAsync();
+    
+//     console.log(node);
+// })();
+// console.log(typeof (node));
+// *
+
+
+// Example
+// (async () => {
+//     const node = await connectAsync();
+    
+//     console.log(node);
+// })();
 //console.log(x.get('language'));
 //console.log(process.version);
 
-export default addon;
+//export default addon;
 
