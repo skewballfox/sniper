@@ -1,38 +1,54 @@
 // /"use strict";
 const {promisify}=require('util');
-const SniperClient= require('../index.node');
-//const connectAsync=promisify(connectSniper);
+const addon= require('../index.node');
+const get_triggers=promisify(addon.get_triggers);
+const get_snippet=promisify(addon.get_snippet);
+
+module.exports.get_triggers=get_triggers
+module.exports.get_snippet=get_snippet
+module.exports.drop_target=addon.drop_target
+module.exports.add_target=addon.add_target
 
 
 //const { Sniper } = addon;
-function sleep(milliseconds) {
-    const date = Date.now();
-    let currentDate = null;
-    do {
-      currentDate = Date.now();
-    } while (currentDate - date < milliseconds);
+
+
+
+/*
+class Sniper{
+  constructor(){
+    this.boxed=SniperClient.init()
   }
+  add_target(session_id,uri,language){
+    SniperClient.add_target(this.boxed,session_id,uri,language);
+  }
+}
+let x=new Sniper();
+console.log(x);
+x.add_target("23456","test.py","python");
+*/
 
+//SniperClient.add_target("23456","test.py","python");
 
-
-SniperClient.init();
-sleep(2000)
-SniperClient.add_target("12345","test.py","python");
-sleep(2000)
-
-//console.log();
-// const { promisify } = require("util");
-
-// const { connectSniper } = require("../index.node");
-
-// const connectAsync = promisify(connectSniper);
 
 // Example
 // (async () => {
-//     const node = await connectAsync();
+//     let trigs = await get_triggers("23456","test.py");
     
-//     console.log(node);
+//     //trigs.forEach(function(entry) {
+//     //  console.log(entry);
+//     //});
+//     console.log(trigs)
 // })();
+// (async () => {
+//   let snippet = await get_snippet("python","if");
+  
+  
+//     console.log(snippet);
+  
+// })();
+
+//SniperClient.drop_target("12345","test.py","python");
 // console.log(typeof (node));
 // *
 

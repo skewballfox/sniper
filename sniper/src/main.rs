@@ -1,16 +1,16 @@
 
 mod config;
 mod target;
-mod sniper;
+mod snippet_manager;
 mod snippet;
 
-mod handler;
+mod sniper_server;
 
 
 use config::SniperConfig;
 use dashmap::DashMap;
 use sniper_common::service::{init_tracing,SniperService};
-use sniper::Sniper;
+use snippet_manager::SnippetManager;
 //mod server;
 //mod server.rs
 
@@ -21,7 +21,7 @@ use tarpc::{serde_transport, server::{self, Incoming, Channel}, tokio_serde::for
 use tokio::net::{UnixListener};//, UnixStream};
 use tokio_util::codec::length_delimited::LengthDelimitedCodec;
 
-use crate::handler::Spotter;
+use crate::sniper_server::SniperServer;
 
 
 
@@ -35,13 +35,13 @@ async fn main() {
     
     let config=Arc::new(Mutex::new(SniperConfig::new()));
     let targets=Arc::new(DashMap::new());
-    let sniper=Arc::new(tokio::sync::RwLock::new(Sniper::new()));
+    let sniper=Arc::new(tokio::sync::RwLock::new(SnippetManager::new()));
     //init_tracing("Sniper Server");
     loop {
         let (stream,_addr)=listener.accept().await.unwrap();
         let framed_stream= codec_builder.new_framed(stream);
         let transport = serde_transport::new(framed_stream,Json::default());
-        let sniper_server = Spotter::new(config.clone(),targets.clone(),sniper.clone());
+        let sniper_server = SniperServer::new(config.clone(),targets.clone(),sniper.clone());
         let fut = server::BaseChannel::with_defaults(transport).execute(sniper_server.serve());
         println!("request recieved");
         tokio::spawn(fut).await;

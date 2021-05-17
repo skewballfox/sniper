@@ -15,13 +15,13 @@ use std::{borrow::Cow, collections::VecDeque, sync::{Mutex,Arc}};
 
 
 #[derive(Debug)]
-pub struct Sniper {
+pub struct SnippetManager {
 
     pub(crate) snippets: DashMap<(String,String),Snippet>,
     pub(crate) snippet_sets: DashMap<(String,String),SnippetSet>,
 }
 
-impl Sniper {
+impl SnippetManager {
     pub fn new() -> Self {
         Self {
             snippets: DashMap::new(),
