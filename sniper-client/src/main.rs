@@ -21,7 +21,7 @@ pub async fn main()-> anyhow::Result<()>{
     
     let client=sniper_common::client::init_client().await;
     
-    println!("starting first request");
+    println!("client: {:#?}",client);
     //let requests= async move {
     client.add_target(tarpc::context::current(),session_id.to_string(),test_uri.to_string(),lang.to_string()).await;
     //println!("sleeping");
