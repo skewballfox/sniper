@@ -17,7 +17,7 @@
     "eslint": "^7.12.1"
   },
   "scripts": {
-    "install": "cargo build",
-    "build": "cargo build"
+    "install": "npm install build",
+    "build": "cargo build --message-format=json-render-diagnostics"
   }
 }
