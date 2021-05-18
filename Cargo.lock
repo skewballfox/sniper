@@ -905,7 +905,7 @@ dependencies = [
  "opentelemetry-jaeger",
  "serde",
  "serde_json",
- "sniper-common",
+ "sniper-common 0.1.0",
  "tarpc",
  "tokio",
  "tokio-serde",
@@ -934,13 +934,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "sniper-common"
+version = "0.1.0"
+source = "git+https://github.com/skewballfox/sniper?branch=master#6d9c759a72140a37c091a88ee2a20fbec63ff2ad"
+dependencies = [
+ "anyhow",
+ "futures",
+ "opentelemetry",
+ "opentelemetry-jaeger",
+ "serde",
+ "tarpc",
+ "tokio",
+ "tokio-serde",
+ "tokio-util",
+ "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "sniper-node"
 version = "0.1.0"
 dependencies = [
  "neon",
- "neon-build",
  "once_cell",
- "sniper-common",
+ "sniper-common 0.1.0 (git+https://github.com/skewballfox/sniper)",
 ]
 
 [[package]]
@@ -959,7 +977,7 @@ dependencies = [
  "serde",
  "serde-tuple-vec-map",
  "serde_json",
- "sniper-common",
+ "sniper-common 0.1.0",
  "tarpc",
  "tokio",
  "tokio-serde",
