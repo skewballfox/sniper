@@ -5,10 +5,13 @@ the core component of a sniper: cross-editor snippet manager.
 **WARNING**: this is very early, and implementation details will definitely change as I work to implement this in vscode. 
 
 - here's what is left to do before it's ready for it's first actual release:
-  - [ ] refactor server code to be more async friendly
-  - [ ] implement missing basic server calls(such as `get_triggers`)
-  - [ ] implement first client lib for javascript/typescript with neon
-  - [ ] implement in vscode with sniper-node
+  
+  
+  - [x] implement first client lib for javascript/typescript with neon
+  - [ ] implement in vscode with sniper-node (WIP)
+  - [ ] implement missing basic server calls(such as `get_library`)
+  - [ ] refactor/improve once I have a minimal working state
+
 
 ## Description 
 
@@ -28,18 +31,14 @@ The project is composed of different components:
   - handles tracking of what snippets are grouped together
   - defines logic for state handling
 - **Sniper-{LANGUAGE}**
-  - these provide functionality to a given language to be implemented in the editor
-  - rather than providing sniper as a lib, these provide a mediator for establishing communication between the sniper application and the editor
-  - the first target is node via neon-rust, possibly followed by python(via pyO3)
-    - may not provide a python wrapper unless there is an editor that requires it for plugins
-
+  - these provide functionality to a given language to be implemented in editor's where rust can't be used directly
+  - rather than providing sniper as a lib, these provide a mediator for establishing communication between the sniper(the server) and the editor
+  - [here's the client lib for javascript/typescript](https://github.com/skewballfox/sniper-node)
 ### Located Elsewhere
-
 - **Sniper-{EDITOR}**
   - written in whatever language is either easiest to write or implement for that editor
-  - first target is vscode via typescript, then kakoune
-  - actually handles state, such as tracking user input and deciding when to suggest/insert a snippet.
   - planning on leveraging interaction with the language server for the target language in order to have smarter loading or completion. we'll see how it goes
+  - [here's the in progress vscode extension](https://github.com/skewballfox/sniper-code)
 - **Snippets**
   - modular
     - can import snippet sets at runtime, either by command or (hopefully) automatically based off context
