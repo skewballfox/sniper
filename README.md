@@ -30,11 +30,11 @@ The project is composed of different components:
   - handles deserialization and storage of snippets
   - handles tracking of what snippets are grouped together
   - defines logic for state handling
+### Located Elsewhere
 - **Sniper-{LANGUAGE}**
   - these provide functionality to a given language to be implemented in editor's where rust can't be used directly
   - rather than providing sniper as a lib, these provide a mediator for establishing communication between the sniper(the server) and the editor
   - [here's the client lib for javascript/typescript](https://github.com/skewballfox/sniper-node)
-### Located Elsewhere
 - **Sniper-{EDITOR}**
   - written in whatever language is either easiest to write or implement for that editor
   - planning on leveraging interaction with the language server for the target language in order to have smarter loading or completion. we'll see how it goes
