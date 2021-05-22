@@ -1,15 +1,17 @@
-
 use std::env;
 
 use futures::{
     future::{self, Ready},
     prelude::*,
 };
+pub use qp_trie::Trie;
 use tarpc::{
     client, context,
     server::{self, Incoming},
 };
-use tracing_subscriber::{fmt::format::FmtSpan, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt};
+use tracing_subscriber::{
+    fmt::format::FmtSpan, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt,
+};
 #[tarpc::service]
 pub trait SniperService {
     //NOTE: may simplify the api once client is implemented, such as removing
@@ -17,23 +19,22 @@ pub trait SniperService {
 
     /// add a target to the list of currently tracked targets
     async fn add_target(session_id: String, uri: String, language: String);
-    
+
     /// drop a target,
     /// drop a snippet set if no longer required by any targets
     async fn drop_target(session_id: String, uri: String, language: String);
-    
+
     ///add a snippet set to the given target
     //async fn target_add_libs(session_id: String, uri: String, libs: Vec<String>);
-    
+
     ///drop a snippet set for a given target
     //async fn target_drop_libs(session_id: String, uri: String, libs: Vec<String>);
-    
+
     /// get the triggers for the snippets associated with a given target
-    async fn get_triggers(session_id: String, uri: String) -> Vec<String>;
-    
+    async fn get_triggers(session_id: String, uri: String) -> Trie<Vec<u8>, String>;
+
     /// get a snippet
     async fn get_snippet(language: String, snippet_key: String) -> Option<Vec<String>>;
-    
 }
 
 /// Initializes an OpenTelemetry tracing subscriber with a Jaeger backend.
