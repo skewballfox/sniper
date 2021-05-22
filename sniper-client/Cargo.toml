@@ -18,6 +18,7 @@ tarpc = {version="0.26.2", features = ["tokio1","serde-transport"] }
 tokio = {version="1.5.0",features=["net","macros","rt-multi-thread"]}#NOTE: more features may be added (as required)
 tokio-serde={version="0.8",features=["json"]}
 tokio-util={version="0.6.6",features=["codec"]}
+qp-trie={version="0.7.6"}
 #dashmap = {version="4.0.2", features=["serde","rayon"]}
 #rayon = {version="1.5"}
 #serde-tuple-vec-map={version="1.0.0"}

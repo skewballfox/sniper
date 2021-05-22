@@ -12,7 +12,11 @@ the core component of a sniper: cross-editor snippet manager.
   - [ ] implement missing basic server calls(such as `get_library`)
   - [ ] refactor/improve once I have a minimal working state
 
+## Update on progress
 
+I'm doing a bit of research on similar editor extensions to figure out what function calls are necessary, and working on a way to make much of the work editor independent.
+
+with any luck implementing this in a given editor will be a matter of implementing function calls
 ## Description 
 
 Sniper is an editor agnostic snippet manager. The snippet syntax is currently superset of that defined by the [LSP's snippet syntax specification](https://github.com/microsoft/language-server-protocol/blob/master/snippetSyntax.md). While right now the snippet directory is static (located at `~/.config/sniper`), this means existing vscode snippets are compatible.
