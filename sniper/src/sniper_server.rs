@@ -3,7 +3,8 @@ use std::sync::Arc;
 use dashmap::DashMap;
 use futures::lock::Mutex;
 
-use sniper_common::{service::SniperService, Trie};
+use qp_trie::Trie;
+use sniper_common::service::SniperService;
 use tarpc::{
     context,
     server::{self, Channel, Incoming},

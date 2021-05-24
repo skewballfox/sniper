@@ -1,13 +1,12 @@
 #[macro_use]
 use lazy_static::lazy_static;
-use regex::Regex;
-use sniper_common::{
-    dashmap::DashMap,
-    rayon::{
-        iter::{IntoParallelIterator, ParallelIterator},
-        vec,
-    },
+use dashmap::DashMap;
+//use futures::lock::Mutex;
+use rayon::{
+    iter::{IntoParallelIterator, ParallelIterator},
+    vec,
 };
+use regex::Regex;
 
 use crate::snippet::{Loader, SnipComponent, Snippet, SnippetBuildMetadata, SnippetSet};
 

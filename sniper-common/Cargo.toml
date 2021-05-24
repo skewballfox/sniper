@@ -20,8 +20,8 @@ tokio-util={version="0.6.6",features=["codec"],optional=true}
 tokio-serde={version="0.8",features=["bincode"]}
 qp-trie={version="0.7.6",features=["serde"]}
 #tokio-util={version="0.6.6",features=["codec"]}
-dashmap = {version="4.0.2", features=["serde","rayon"]}
-rayon = {version="1.5"}
+#dashmap = {version="4.0.2", features=["serde","rayon"]}
+#rayon = {version="1.5"}
 #serde-tuple-vec-map={version="1.0.0"}
 #regex= {version="1.4.6"}
 #lazy_static= "1.4.0"
