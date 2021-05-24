@@ -5,4 +5,6 @@ pub mod client;
 
 pub const SOCKET_PATH: &str = "/tmp/sniper.socket";
 
-//pub use qp_trie::Trie;
+pub use dashmap;
+pub use qp_trie::Trie;
+pub use rayon;
