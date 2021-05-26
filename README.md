@@ -17,6 +17,8 @@ the core component of a sniper: cross-editor snippet manager.
 I'm doing a bit of research on similar editor extensions to figure out what function calls are necessary, and working on a way to make much of the work editor independent.
 
 with any luck implementing this in a given editor will be a matter of implementing function calls
+
+I'm moving towards checking input against prefixes(stored in a trie) server side, and returning a vector of completions. This will make all client side state management unnecessary. I was worried about speed with this approach but I realized I don't need to beat the speed of the native language, only the speed of human perception. I may wind up moving from unix sockets to named pipes for faster response times.
 ## Description 
 
 Sniper is an editor agnostic snippet manager. The snippet syntax is currently superset of that defined by the [LSP's snippet syntax specification](https://github.com/microsoft/language-server-protocol/blob/master/snippetSyntax.md). While right now the snippet directory is static (located at `~/.config/sniper`), this means existing vscode snippets are compatible.
