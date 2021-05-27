@@ -9,8 +9,9 @@ use tarpc::{
     context,
     server::{self, Channel, Incoming},
 };
+use tokio::sync::RwLock;
 
-use crate::{config::SniperConfig, snippet_manager::SnippetManager, target::TargetData};
+use crate::{config::SniperConfig, snippet, snippet_manager::SnippetManager, target::TargetData};
 
 #[derive(Clone)]
 pub(crate) struct SniperServer {
@@ -44,36 +45,47 @@ impl SniperService for SniperServer {
     ) {
         println!("adding target: {:?},{:?},{:?}", session_id, uri, language);
         //let sniper=self.snip_lock.read().await;
+        if self
+            .targets
+            .contains_key(&(session_id.clone(), uri.clone()))
+        {
+            println!("target already tracked");
+            return;
+        }
         let mut config = self.config.lock().await;
         println!("loaded vars");
         //let targets=&*self.targets;
         if config.languages.contains_key(&language) {
+            println!("config contains language {:?}", language);
             let mut target_data = TargetData::new(&language);
 
-            if !config.languages[&language].initialized {
-                println!("config contains language {:?}", language);
-                let mut sniper = self.snip_lock.write().await;
-                println!("got write lock for snippet manager");
-                for snippet_set in config.languages[&language].base_snippets.clone().iter() {
-                    //NOTE: in future need to handle error, where base snippets
-                    //defined in config isn't found (in appropriate directory)
-                    let snippet_data = config.get_snippet_data(&language, snippet_set);
-                    println!("loading snippet data into sniper");
-                    sniper.load(
-                        &language,
-                        &snippet_set.to_string(),
-                        &snippet_data.to_string(),
-                    );
-                    target_data.loaded_snippets.insert(snippet_set.to_string());
-                }
-                config.language_initialized(&language);
-            } else {
-                //the base sets for this language have already been loaded
-                for snippet_set in config.languages[&language].base_snippets.clone().iter() {
-                    //copy the names of the already loaded snippet sets to target data
-                    target_data.loaded_snippets.insert(snippet_set.to_string());
-                }
-            }
+            let mut snippet_manager = self.snip_lock.write().await;
+            //get a list of sets that needed to be loaded into the snippet manager
+            config.languages[&language]
+                .base_snippets
+                .iter()
+                .for_each(|snippet_set| {
+                    if !snippet_manager
+                        .snippet_sets //check if the snippet set has already been loaded
+                        .contains_key(&(language.clone(), snippet_set.to_string()))
+                    {
+                        let snippet_data = config.get_snippet_data(&language, &snippet_set);
+                        snippet_manager.load(
+                            &language,
+                            &snippet_set.to_string(),
+                            &snippet_data.to_string(),
+                            &mut target_data,
+                        );
+                    } else {
+                        target_data.triggers.extend(
+                            snippet_manager.triggers(language.clone(), snippet_set.clone()),
+                        );
+                        target_data.loaded_snippets.insert(snippet_set.to_string());
+                    }
+                });
+
+            config.language_initialized(&language);
+
             &self
                 .targets
                 .insert((session_id.into(), uri.into()), target_data);
@@ -130,66 +142,40 @@ impl SniperService for SniperServer {
     }
     */
 
-    async fn get_triggers(
+    async fn get_completions(
         self,
         _: context::Context,
         session_id: String,
         uri: String,
-    ) -> Trie<Vec<u8>, String> {
+        input: Vec<u8>,
+    ) -> Vec<String> {
+        println!("{:?}", String::from_utf8(input.clone()));
+        let target_key = (session_id, uri);
+        let completions: Vec<String> = match Arc::clone(&self.targets).entry(target_key) {
+            dashmap::mapref::entry::Entry::Occupied(ref target) => target
+                .get()
+                .triggers
+                .iter_prefix(&input)
+                .map(|(_trig, snip)| snip.clone())
+                .collect::<Vec<String>>(),
+            dashmap::mapref::entry::Entry::Vacant(_) => Vec::new(),
+        };
+        completions
+    }
+
+    async fn get_snippet(
+        self,
+        _: context::Context,
+        session_id: String,
+        uri: String,
+        snippet_name: String,
+    ) -> Option<Vec<String>> {
         let language = self
             .targets
             .get(&(session_id.to_string(), uri.to_string()))
             .unwrap()
             .language
             .clone();
-        let snippet_manager = self.snip_lock.read().await;
-        let sets: Vec<String> = self
-            .targets
-            .get(&(session_id.to_string(), uri.to_string()))
-            .unwrap()
-            .loaded_snippets
-            .clone()
-            .into_iter()
-            .collect();
-        println!("triggers requested");
-        let mut requested_triggers = Vec::new();
-        println!("sets: {:?}", sets);
-        sets.iter().into_iter().for_each(|set| {
-            requested_triggers.append(
-                &mut snippet_manager
-                    .snippet_sets
-                    .get(&(language.to_string(), set.into()))
-                    .unwrap()
-                    .contents
-                    .clone(),
-            );
-        });
-        println!("requested triggers: {:?}", requested_triggers);
-        let mut triggers: Trie<Vec<u8>, String> = Trie::new();
-
-        requested_triggers.iter().for_each(|snippet| {
-            triggers.insert(
-                snippet_manager
-                    .snippets
-                    .get(&(language.clone(), snippet.into()))
-                    .unwrap()
-                    .prefix
-                    .clone(),
-                snippet.clone(),
-            );
-            //let trigger=self.snippets.get(&(language.into(),snippet.into())).unwrap().prefix.clone();
-            //return trigger.to_string()
-        });
-        println!("triggers: {:?}", triggers);
-        return triggers;
-    }
-
-    async fn get_snippet(
-        self,
-        _: context::Context,
-        language: String,
-        snippet_name: String,
-    ) -> Option<Vec<String>> {
         let snippet_key = &(language.to_string(), snippet_name.to_string());
         let snippet_manager = self.snip_lock.read().await;
         let mut assembly_required = false;
@@ -213,6 +199,8 @@ impl SniperService for SniperServer {
                     .clone()
             }
         } else {
+            println!("snippet not found");
+            println!("snippets: {:?}", snippet_manager.snippets);
             not_found = true;
         }
         drop(snippet_manager);
