@@ -31,10 +31,14 @@ pub trait SniperService {
     //async fn target_drop_libs(session_id: String, uri: String, libs: Vec<String>);
 
     /// get the triggers for the snippets associated with a given target
-    async fn get_triggers(session_id: String, uri: String) -> Trie<Vec<u8>, String>;
+    async fn get_completions(session_id: String, uri: String, input: Vec<u8>) -> Vec<String>;
 
     /// get a snippet
-    async fn get_snippet(language: String, snippet_key: String) -> Option<Vec<String>>;
+    async fn get_snippet(
+        session_id: String,
+        uri: String,
+        snippet_key: String,
+    ) -> Option<Vec<String>>;
 }
 
 /// Initializes an OpenTelemetry tracing subscriber with a Jaeger backend.

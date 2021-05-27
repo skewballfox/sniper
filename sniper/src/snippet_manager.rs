@@ -1,6 +1,8 @@
+use iter::empty;
 #[macro_use]
 use lazy_static::lazy_static;
-use dashmap::DashMap;
+use dashmap::{iter::Iter, DashMap};
+use qp_trie::Trie;
 //use futures::lock::Mutex;
 use rayon::{
     iter::{IntoParallelIterator, ParallelIterator},
@@ -8,11 +10,15 @@ use rayon::{
 };
 use regex::Regex;
 
-use crate::snippet::{Loader, SnipComponent, Snippet, SnippetBuildMetadata, SnippetSet};
+use crate::{
+    snippet::{Loader, SnipComponent, Snippet, SnippetBuildMetadata, SnippetSet},
+    target::TargetData,
+};
 
 use std::{
     borrow::Cow,
     collections::VecDeque,
+    iter,
     sync::{Arc, Mutex},
 };
 
@@ -30,11 +36,21 @@ impl SnippetManager {
         }
     }
 
-    pub fn load(&mut self, language: &str, snip_set_name: &str, snippet_data: &str) {
+    pub fn load(
+        &mut self,
+        language: &str,
+        snip_set_name: &str,
+        snippet_data: &str,
+        target: &mut TargetData,
+    ) {
         println!("loading started");
         let temp: Loader = serde_json::from_str(snippet_data.into()).unwrap();
         let mut snippet_set: Vec<String> = Vec::with_capacity(temp.snippets.len());
+
         for (snippet_key, snippet) in temp.snippets.iter() {
+            target
+                .triggers
+                .insert(snippet.prefix.clone(), snippet_key.to_owned());
             self.snippets.insert(
                 (language.to_string(), snippet_key.to_owned()),
                 snippet.to_owned(),
@@ -45,8 +61,32 @@ impl SnippetManager {
             (language.into(), snip_set_name.into()),
             SnippetSet::new(snippet_set),
         );
+        target.loaded_snippets.insert(snip_set_name.into());
     }
-
+    pub fn triggers(
+        &self,
+        language: String,
+        snippet_set: String,
+    ) -> Box<dyn Iterator<Item = (Vec<u8>, String)> + '_> {
+        Box::new(
+            self.snippet_sets
+                .get(&(language.clone(), snippet_set.to_string()))
+                .unwrap()
+                .contents
+                .clone()
+                .into_iter()
+                .map(move |s| {
+                    (
+                        self.snippets
+                            .get(&(language.clone(), s.clone()))
+                            .unwrap()
+                            .prefix
+                            .clone(),
+                        s.clone(),
+                    )
+                }),
+        )
+    }
     pub fn unload(&mut self, language: &str, snip_set_to_drop: &str) {
         for snippet_key in self
             .snippet_sets
