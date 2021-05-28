@@ -1,7 +1,8 @@
 //https://www.cs.brandeis.edu/~cs146a/rust/rustbyexample-02-21-2015/sockets.html
 
-use sniper_common::service::SniperServiceClient;
-use tarpc::{client, context};
+use sniper_common::service::{init_tracing, SniperServiceClient, Trie};
+use tarpc::{client, context, serde_transport, tokio_serde::formats::Json, transport};
+use tokio_util::codec::{FramedWrite, LengthDelimitedCodec};
 
 //Right now, this is just a "test" client, but planned to store functions used across client libs
 #[tokio::main]

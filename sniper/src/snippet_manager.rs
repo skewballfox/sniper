@@ -22,17 +22,20 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SnippetManager {
-    pub(crate) snippets: DashMap<(String, String), Snippet>,
-    pub(crate) snippet_sets: DashMap<(String, String), SnippetSet>,
+    pub(crate) snippets: Arc<DashMap<(String, String), Snippet>>,
+    pub(crate) snippet_sets: Arc<DashMap<(String, String), SnippetSet>>,
 }
 
 impl SnippetManager {
-    pub fn new() -> Self {
+    pub fn new(
+        snippets: Arc<DashMap<(String, String), Snippet>>,
+        snippet_sets: Arc<DashMap<(String, String), SnippetSet>>,
+    ) -> Self {
         Self {
-            snippets: DashMap::new(),
-            snippet_sets: DashMap::new(),
+            snippets,
+            snippet_sets,
         }
     }
 
@@ -67,27 +70,25 @@ impl SnippetManager {
         &self,
         language: String,
         snippet_set: String,
-    ) -> Box<dyn Iterator<Item = (Vec<u8>, String)> + '_> {
-        Box::new(
-            self.snippet_sets
-                .get(&(language.clone(), snippet_set.to_string()))
-                .unwrap()
-                .contents
-                .clone()
-                .into_iter()
-                .map(move |s| {
-                    (
-                        self.snippets
-                            .get(&(language.clone(), s.clone()))
-                            .unwrap()
-                            .prefix
-                            .clone(),
-                        s.clone(),
-                    )
-                }),
-        )
+    ) -> impl Iterator<Item = (Vec<u8>, String)> + '_ {
+        self.snippet_sets
+            .get(&(language.clone(), snippet_set.to_string()))
+            .unwrap()
+            .contents
+            .clone()
+            .into_iter()
+            .map(move |s| {
+                (
+                    self.snippets
+                        .get(&(language.clone(), s.clone()))
+                        .unwrap()
+                        .prefix
+                        .clone(),
+                    s.clone(),
+                )
+            })
     }
-    pub fn unload(&mut self, language: &str, snip_set_to_drop: &str) {
+    pub fn unload(&self, language: &str, snip_set_to_drop: &str) {
         for snippet_key in self
             .snippet_sets
             .get(&(language.into(), snip_set_to_drop.into()))
@@ -102,7 +103,7 @@ impl SnippetManager {
             .remove(&(language.into(), snip_set_to_drop.into()));
     }
 
-    pub fn rebuild_snippets(&mut self, language: &str, snippet_name: String) {
+    pub fn rebuild_snippets(&self, language: &str, snippet_name: String) {
         let mut snippet_stack = VecDeque::new();
         let mut build_stack = VecDeque::new();
         snippet_stack.push_back(snippet_name);
@@ -223,7 +224,7 @@ impl SnippetManager {
         )
     }
 
-    fn build_snippet(&mut self, language: &str, build_data: SnippetBuildMetadata) {
+    fn build_snippet(&self, language: &str, build_data: SnippetBuildMetadata) {
         let snippet_key = &(language.to_string(), build_data.name.clone());
 
         let mut new_body: Vec<String> = Vec::with_capacity(build_data.body.len());

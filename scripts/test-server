@@ -10,5 +10,5 @@ echo $proj_home
 bin_path="$proj_home/target/debug"
 echo $bin_path
 chmod +x $bin_path/sniper
-systemd-run --user --socket-property=ListenStream=/tmp/sniper.socket --working-dir=$bin_path $bin_path/sniper
+systemd-run --user --socket-property=ListenStream=/tmp/sniper.socket $HOME/.local/bin/sniper
 #echo $bin_path
