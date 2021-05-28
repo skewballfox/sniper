@@ -15,21 +15,21 @@ use crate::{config::SniperConfig, snippet, snippet_manager::SnippetManager, targ
 
 #[derive(Clone)]
 pub(crate) struct SniperServer {
-    pub(crate) config: Arc<Mutex<SniperConfig>>,
+    pub(crate) config: Arc<SniperConfig>,
     pub(crate) targets: Arc<DashMap<(String, String), TargetData>>,
-    pub(crate) snip_lock: Arc<tokio::sync::RwLock<SnippetManager>>,
+    pub(crate) snippet_manager: SnippetManager,
 }
 
 impl SniperServer {
     pub fn new(
-        config: Arc<Mutex<SniperConfig>>,
+        config: Arc<SniperConfig>,
         targets: Arc<DashMap<(String, String), TargetData>>,
-        snip_lock: Arc<tokio::sync::RwLock<SnippetManager>>,
+        snippet_manager: SnippetManager,
     ) -> Self {
         Self {
             config,
             targets,
-            snip_lock,
+            snippet_manager,
         }
     }
 }
@@ -52,16 +52,16 @@ impl SniperService for SniperServer {
             println!("target already tracked");
             return;
         }
-        let mut config = self.config.lock().await;
+
         println!("loaded vars");
         //let targets=&*self.targets;
-        if config.languages.contains_key(&language) {
+        if self.config.languages.contains_key(&language) {
             println!("config contains language {:?}", language);
             let mut target_data = TargetData::new(&language);
 
-            let mut snippet_manager = self.snip_lock.write().await;
+            let mut snippet_manager = self.snippet_manager.clone();
             //get a list of sets that needed to be loaded into the snippet manager
-            config.languages[&language]
+            self.config.languages[&language]
                 .base_snippets
                 .iter()
                 .for_each(|snippet_set| {
@@ -69,7 +69,7 @@ impl SniperService for SniperServer {
                         .snippet_sets //check if the snippet set has already been loaded
                         .contains_key(&(language.clone(), snippet_set.to_string()))
                     {
-                        let snippet_data = config.get_snippet_data(&language, &snippet_set);
+                        let snippet_data = self.config.get_snippet_data(&language, &snippet_set);
                         snippet_manager.load(
                             &language,
                             &snippet_set.to_string(),
@@ -83,8 +83,6 @@ impl SniperService for SniperServer {
                         target_data.loaded_snippets.insert(snippet_set.to_string());
                     }
                 });
-
-            config.language_initialized(&language);
 
             &self
                 .targets
@@ -107,7 +105,7 @@ impl SniperService for SniperServer {
         language: String,
     ) {
         let target_key = &(session_id.to_string(), uri.to_string());
-        let snippet_manager = self.snip_lock.read().await;
+
         println!("dropping target: {:?}", target_key);
 
         if self.targets.contains_key(target_key) {
@@ -115,14 +113,14 @@ impl SniperService for SniperServer {
             //https://doc.rust-lang.org/std/collections/struct.HashSet.html#method.drain_filter
             if let Some(target_data) = self.targets.remove(&(session_id, uri)) {
                 for snip_set in target_data.1.loaded_snippets.iter() {
-                    let drop_snippets_flag = snippet_manager
+                    let drop_snippets_flag = self
+                        .snippet_manager
                         .snippet_sets
                         .get_mut(&(language.to_string(), snip_set.to_string()))
                         .unwrap()
                         .decrement_target_count();
                     if drop_snippets_flag {
-                        let mut snippet_manager = self.snip_lock.write().await;
-                        snippet_manager.unload(&language, &snip_set)
+                        self.snippet_manager.unload(&language, &snip_set)
                     }
                 }
             }
@@ -177,13 +175,14 @@ impl SniperService for SniperServer {
             .language
             .clone();
         let snippet_key = &(language.to_string(), snippet_name.to_string());
-        let snippet_manager = self.snip_lock.read().await;
+
         let mut assembly_required = false;
         let mut not_found = false;
         let mut snippet_body = Vec::new();
         println!("{:?} requested", snippet_name);
-        if snippet_manager.snippets.contains_key(snippet_key) {
-            if snippet_manager
+        if self.snippet_manager.snippets.contains_key(snippet_key) {
+            if self
+                .snippet_manager
                 .snippets
                 .get(snippet_key)
                 .unwrap()
@@ -191,7 +190,8 @@ impl SniperService for SniperServer {
             {
                 assembly_required = true;
             } else {
-                snippet_body = snippet_manager
+                snippet_body = self
+                    .snippet_manager
                     .snippets
                     .get(snippet_key)
                     .unwrap()
@@ -200,18 +200,20 @@ impl SniperService for SniperServer {
             }
         } else {
             println!("snippet not found");
-            println!("snippets: {:?}", snippet_manager.snippets);
+            println!("snippets: {:?}", self.snippet_manager.snippets);
             not_found = true;
         }
-        drop(snippet_manager);
+
         if not_found {
             None
         } else {
             if assembly_required {
                 //only acquire writelock when necessary
-                let mut snippet_manager = self.snip_lock.write().await;
-                snippet_manager.rebuild_snippets(&language, snippet_name.into());
-                snippet_body = snippet_manager
+
+                self.snippet_manager
+                    .rebuild_snippets(&language, snippet_name.into());
+                snippet_body = self
+                    .snippet_manager
                     .snippets
                     .get(snippet_key)
                     .unwrap()
