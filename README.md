@@ -8,17 +8,23 @@ the core component of a sniper: cross-editor snippet manager.
   
   
   - [x] implement first client lib for javascript/typescript with neon
-  - [ ] implement in vscode with sniper-node (WIP)
+  - [ ] figure out how to cache socket connection to avoid initializing client per function call
+  - [ ] switch to file based logging
+  - [ ] implement variables and transforms
+  - [ ] implement per snippet request parsing
+  - [ ] add struct for snippetdata(description and name), turn into jsobject in sniper-node
+  - [ ] implement get snippet in vscode(WIP)
+  - [ ] figure out how to handle communication with target's LSP
   - [ ] implement missing basic server calls(such as `get_library`)
-  - [ ] refactor/improve once I have a minimal working state
+
 
 ## Update on progress
 
-I'm doing a bit of research on similar editor extensions to figure out what function calls are necessary, and working on a way to make much of the work editor independent.
+When the client and server are ran in release mode, getting completions on each keystroke is FAST, even with the current necessity to initialize the client connection on each function call. 
 
-with any luck implementing this in a given editor will be a matter of implementing function calls
+I'm working on a way to keep a consistent client connection either per editor or per target, and this will greatly reduce the amount of work necessary both client and server side. I'm also about to switch from print statements to actual file based logs, so that it will be possible to daemonize the server(on first connection request), which is currently impossible due to daemons not having anything attached to their STDOUT. this will make it possible to daemonize the server on first added target, and the server will shut itself down when the last target is dropped. 
 
-I'm moving towards checking input against prefixes(stored in a trie) server side, and returning a vector of completions. This will make all client side state management unnecessary. I was worried about speed with this approach but I realized I don't need to beat the speed of the native language, only the speed of human perception. I may wind up moving from unix sockets to named pipes for faster response times.
+plus, I'm about to implement true server side parsing which, in order to keep this truly editor agnostic, means adding variables into the mix.
 ## Description 
 
 Sniper is an editor agnostic snippet manager. The snippet syntax is currently superset of that defined by the [LSP's snippet syntax specification](https://github.com/microsoft/language-server-protocol/blob/master/snippetSyntax.md). While right now the snippet directory is static (located at `~/.config/sniper`), this means existing vscode snippets are compatible.
@@ -32,7 +38,7 @@ The project is composed of different components:
 - **Sniper**
   - the backend-server
   - communicates with client over unix domain socket
-  - started automatically on first client request thanks to systemd
+  - started automatically on first client request
   - handles deserialization and storage of snippets
   - handles tracking of what snippets are grouped together
   - defines logic for state handling
@@ -52,5 +58,5 @@ The project is composed of different components:
     - (Considering) snippets can be overridden 
   - contextual
     - planned support for multilanguage context. for example, loading mathjax snippets when in the target is a markdown file, or importing html if the current context sometimes calls for embedded html. jupyter notebooks is another good example of when multilanguage snippets is useful. 
-    - snippets can be conditionally disabled or enabled based off activity: hopefully, no more annoying suggestions for else unless you have a proceeding if.
+    - snippets can be conditionally disabled or enabled based off activity: hopefully, no more annoying suggestions for `else` unless you have a proceeding `if`.
   
