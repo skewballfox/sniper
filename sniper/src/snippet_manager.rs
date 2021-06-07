@@ -9,6 +9,7 @@ use rayon::{
     vec,
 };
 use regex::Regex;
+use sniper_common::service::SnippetInfo;
 
 use crate::{
     snippet::{Loader, SnipComponent, Snippet, SnippetBuildMetadata, SnippetSet},
@@ -51,9 +52,14 @@ impl SnippetManager {
         let mut snippet_set: Vec<String> = Vec::with_capacity(temp.snippets.len());
 
         for (snippet_key, snippet) in temp.snippets.iter() {
-            target
-                .triggers
-                .insert(snippet.prefix.clone(), snippet_key.to_owned());
+            target.triggers.insert(
+                snippet.prefix.clone(),
+                SnippetInfo {
+                    name: snippet_key.to_owned(),
+                    description: snippet.description.clone(),
+                },
+            );
+
             self.snippets.insert(
                 (language.to_string(), snippet_key.to_owned()),
                 snippet.to_owned(),
@@ -66,11 +72,12 @@ impl SnippetManager {
         );
         target.loaded_snippets.insert(snip_set_name.into());
     }
+
     pub fn triggers(
         &self,
         language: String,
         snippet_set: String,
-    ) -> impl Iterator<Item = (Vec<u8>, String)> + '_ {
+    ) -> impl Iterator<Item = (Vec<u8>, SnippetInfo)> + '_ {
         self.snippet_sets
             .get(&(language.clone(), snippet_set.to_string()))
             .unwrap()
@@ -84,7 +91,15 @@ impl SnippetManager {
                         .unwrap()
                         .prefix
                         .clone(),
-                    s.clone(),
+                    SnippetInfo {
+                        name: s.clone(),
+                        description: self
+                            .snippets
+                            .get(&(language.clone(), s.clone()))
+                            .unwrap()
+                            .description
+                            .clone(),
+                    },
                 )
             })
     }

@@ -4,14 +4,14 @@ use dashmap::DashMap;
 use futures::lock::Mutex;
 
 use qp_trie::Trie;
-use sniper_common::service::SniperService;
+use sniper_common::service::{SniperService, SnippetInfo};
 use tarpc::{
     context,
     server::{self, Channel, Incoming},
 };
 use tokio::sync::RwLock;
 
-use crate::{config::SniperConfig, snippet, snippet_manager::SnippetManager, target::TargetData};
+use crate::{config::SniperConfig, snippet_manager::SnippetManager, target::TargetData};
 
 #[derive(Clone)]
 pub(crate) struct SniperServer {
@@ -146,16 +146,17 @@ impl SniperService for SniperServer {
         session_id: String,
         uri: String,
         input: Vec<u8>,
-    ) -> Vec<String> {
+    ) -> Vec<SnippetInfo> {
         println!("{:?}", String::from_utf8(input.clone()));
         let target_key = (session_id, uri);
-        let completions: Vec<String> = match Arc::clone(&self.targets).entry(target_key) {
+        let snippet_manager = self.snippet_manager.clone();
+        let completions: Vec<SnippetInfo> = match Arc::clone(&self.targets).entry(target_key) {
             dashmap::mapref::entry::Entry::Occupied(ref target) => target
                 .get()
                 .triggers
                 .iter_prefix(&input)
                 .map(|(_trig, snip)| snip.clone())
-                .collect::<Vec<String>>(),
+                .collect::<Vec<SnippetInfo>>(),
             dashmap::mapref::entry::Entry::Vacant(_) => Vec::new(),
         };
         completions

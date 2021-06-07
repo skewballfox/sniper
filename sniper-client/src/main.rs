@@ -1,10 +1,10 @@
 //https://www.cs.brandeis.edu/~cs146a/rust/rustbyexample-02-21-2015/sockets.html
 
-use sniper_common::service::{init_tracing, SniperServiceClient, Trie};
+use sniper_common::service::SniperServiceClient;
 use tarpc::{client, context, serde_transport, tokio_serde::formats::Json, transport};
 use tokio_util::codec::{FramedWrite, LengthDelimitedCodec};
 
-//Right now, this is just a "test" client, but planned to store functions used across client libs
+//this is just a "test" client, will probably rewrite the server to have actual test when the project is further along
 #[tokio::main]
 pub async fn main() -> anyhow::Result<()> {
     println!("Hello from sniper client!");
