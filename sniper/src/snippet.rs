@@ -26,7 +26,7 @@ pub struct Snippet {
     #[serde(rename = "type", default = "default_snippet_type")]
     snippet_type: SnippetTypes,
     pub(crate) body: Vec<String>,
-    description: String,
+    pub(crate) description: String,
     #[serde(default = "unconditional")]
     is_conditional: bool,
     #[serde(default = "no_action")]

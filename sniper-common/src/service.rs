@@ -12,6 +12,13 @@ use tarpc::{
 use tracing_subscriber::{
     fmt::format::FmtSpan, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt,
 };
+
+use serde::{Deserialize, Serialize};
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct SnippetInfo {
+    pub name: String,
+    pub description: String,
+}
 #[tarpc::service]
 pub trait SniperService {
     //NOTE: may simplify the api once client is implemented, such as removing
@@ -31,7 +38,7 @@ pub trait SniperService {
     //async fn target_drop_libs(session_id: String, uri: String, libs: Vec<String>);
 
     /// get the triggers for the snippets associated with a given target
-    async fn get_completions(session_id: String, uri: String, input: Vec<u8>) -> Vec<String>;
+    async fn get_completions(session_id: String, uri: String, input: Vec<u8>) -> Vec<SnippetInfo>;
 
     /// get a snippet
     async fn get_snippet(

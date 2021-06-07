@@ -2,7 +2,9 @@ use std::{collections::HashSet, sync::Arc};
 
 use dashmap::DashSet;
 use qp_trie::Trie;
+use sniper_common::service::SnippetInfo;
 use tokio::sync::RwLock;
+
 //use std::hash::{Hash,Hasher};
 //NOTE: may not be necessary, may wind up getting rid of this
 /*
@@ -18,7 +20,7 @@ pub struct TargetData {
     pub(crate) loaded_snippets: DashSet<String>,
     //disabled_snippets: DashSet<String>,
     //NOTE: probably unnecessary to track this here, given SnippetSets tracks dependant targets
-    pub(crate) triggers: Trie<Vec<u8>, String>,
+    pub(crate) triggers: Trie<Vec<u8>, SnippetInfo>,
 }
 
 impl TargetData {
