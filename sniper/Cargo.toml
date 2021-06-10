@@ -30,6 +30,9 @@ serde = {version="1.0.115", features=["derive"]}
 serde_bytes={version="0.11.5"}
 toml = {version="0.5", features = ["preserve_order"]}#NOTE: still used for config
 directories = "3.0"
+daemonize = "0.4.1"
+libc = "0.2.71"
+whoami = "0.8.2"
 #umask="1.0.0"
 tracing = { version = "0.1" }
 tracing-opentelemetry = "0.12"
