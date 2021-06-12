@@ -28,26 +28,7 @@ use crate::sniper_server::SniperServer;
 async fn main() {
     //free the socket created by old instances
     let _ = std::fs::remove_file(sniper_common::SOCKET_PATH);
-    /*
-    //store stdout/stderr in files
-    let stdout = std::fs::File::create("/tmp/sniper.out").unwrap();
-    let stderr = std::fs::File::create("/tmp/sniper.err").unwrap();
 
-    let daemon = Daemonize::new()
-        .pid_file("/tmp/sniper.pid")
-        //.chown_pid_file(true) // is optional, see `Daemonize` documentation
-        .working_directory(std::env::current_dir().unwrap()) // for default behaviour.
-        //.user("nobody")
-        //.group("sniper") // Group name
-        //.group(2) // or group id.
-        //.umask(0o777) // Set umask, `0o027` by default.
-        .stdout(stdout) // Redirect stdout to `/tmp/sniper.out`.
-        .stderr(stderr)
-        //.privileged_action(|| UnixListener::bind(sniper_common::SOCKET_PATH).unwrap()) // Redirect stderr to `/tmp/sniper.err`.
-        .exit_action(|| shutdown_tracer_provider())
-        .start()
-        .expect("failed to daemonize server");
-    */
     //initialize jaeger tracing
     sniper_common::init_tracing("Sniper Server").expect("failed to initialize tracing");
     //create a lister on the specified socket
