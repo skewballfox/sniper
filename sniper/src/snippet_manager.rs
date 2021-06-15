@@ -163,7 +163,7 @@ impl SnippetManager {
         lazy_static! {
             static ref digit: Regex = Regex::new(r"[[0-9]&&[^a-zA-Z]]+").unwrap();
             //TODO: deal with escaped characters such as \$ in bash
-            static ref modification_needed: Regex = Regex::new(r"(\$\{?\d+)|@").unwrap();
+            static ref modification_needed: Regex = Regex::new(r"\$(\{?\d+|\$)").unwrap();
             static ref snippet_finder: Regex = Regex::new("[[a-zA-Z0-9/]]+").unwrap();
             static ref snippet_args_finder: Regex = Regex::new(r"\(.*\)}").unwrap();
         }
@@ -183,23 +183,14 @@ impl SnippetManager {
                 let line = &borrowed_body[line_index];
                 let mut line_data = Vec::new();
                 for sub_match in modification_needed.find_iter(line) {
-                    let lead_char = line[sub_match.start()..sub_match.end()]
+                    println!("{:?}", &line[sub_match.start()..sub_match.end()]);
+                    let lead_char = line[sub_match.start() + 1..sub_match.end()]
                         .chars()
                         .nth(0)
                         .unwrap();
 
                     match lead_char {
                         '$' => {
-                            //println!("found tabstop at {:?}",&line[sub_match.start()..sub_match.end()]);
-                            let indices = digit
-                                .find(&line[sub_match.start()..sub_match.end()])
-                                .unwrap();
-                            line_data.push(SnipComponent::tabstop {
-                                start: sub_match.start() + indices.start(),
-                                end: sub_match.start() + indices.end(),
-                            });
-                        }
-                        '@' => {
                             let indices = snippet_finder.find(&line[sub_match.end()..]).unwrap();
                             let sub_snippet_name = &line[sub_match.end() + indices.start()
                                 ..sub_match.end() + indices.end()];
@@ -215,7 +206,14 @@ impl SnippetManager {
                             });
                         }
                         _ => {
-                            panic!("Zoinks Scoob! That wasn't supposed to happen");
+                            //println!("found tabstop at {:?}",&line[sub_match.start()..sub_match.end()]);
+                            let indices = digit
+                                .find(&line[sub_match.start()..sub_match.end()])
+                                .unwrap();
+                            line_data.push(SnipComponent::tabstop {
+                                start: sub_match.start() + indices.start(),
+                                end: sub_match.start() + indices.end(),
+                            });
                         }
                     }
                 }

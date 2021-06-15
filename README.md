@@ -21,11 +21,10 @@ there's a lot more to handle after this, but at that point it will be pretty saf
 
 ## Update on progress
 
-I have working completions and snippets for vscode. granted it's technically not cross editor at the moment, because it relies on the definition of a vscode [snippetString](https://vshaxe.github.io/vscode-extern/vscode/SnippetString.html).
+I've pretty much hit a point to where almost all of the components of the project going forward require reworking parts of the design. I'm putting this project down for a little while to get some perspective, though if someone wants to contribute, has an idea they want to see, wants to implement sniper in an editor, or is just curious about the project feel free to open an issue or post in the repo's discussion section
 
-I'm working towards daemonizing the server(planned on first connection request), but running into issues with requests being dropped, but once I solve that it should be trivial to start the server as needed.
+I have working completions and snippets for vscode. granted it's technically not cross editor at the moment, because it relies on the definition of a vscode [snippetString](https://vshaxe.github.io/vscode-extern/vscode/SnippetString.html). completions in debug mode happen in the range of 3-5 milliseconds, and in release mode in the range of microseconds on my local system. For perspective, the lowest threshold for latency noticable to human perception is around [13ms](https://www.pubnub.com/blog/how-fast-is-realtime-human-perception-and-technology/).
 
-This is getting closer to being ready for use in the wild, Honestly kind of excited for that.
 
 ## Description 
 
