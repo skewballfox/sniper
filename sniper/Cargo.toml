@@ -34,6 +34,7 @@ daemonize = "0.4.1"
 libc = "0.2.71"
 whoami = "0.8.2"
 #umask="1.0.0"
+nom="6.2.1"
 tracing = { version = "0.1" }
 tracing-opentelemetry = "0.12"
 opentelemetry = { version = "0.13", features = ["rt-tokio"] }
