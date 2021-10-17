@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+message SnippetInfo {
+  string name = 1;
+  string description = 2;
+}
+
+message CompletionsRequest {
+  string session_id = 1;
+  string uri = 2;
+  bytes user_input = 3;
+}
+
+message CompletionsResponse { repeated SnippetInfo completions = 1; }
+
+message TargetRequest {
+  string session_id = 1;
+  string uri = 2;
+  string language = 3;
+}
+
+message TargetResponse { bool success = 1; }
+
+message SnippetRequest {
+  string session_id = 1;
+  string uri = 2;
+  string snippet_name = 3;
+}
+
+enum SnippetComponent { TEXT = 0; }
+message SnippetResponse {
+  oneof {}
+}
