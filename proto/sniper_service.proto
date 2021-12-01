@@ -1,0 +1,8 @@
+service SniperService {
+  rpc add_target(TargetRequest) returns (TargetResponse);
+  rpc drop_target(TargetRequest) returns (TargetResponse);
+
+  rpc get_completions(stream CompletionsRequest)
+      returns (stream CompletionsResponse);
+  rpc get_snippet(SnippetRequest) returns (stream SnippetResponse)
+}

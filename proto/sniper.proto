@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+message SnippetInfo {
+  string name = 1;
+  string description = 2;
+}
+
+message Tabstop {
+    int number=1;
+    repeated oneof content { //oneof supports null hence empty tabstop does not need to be specified
+        string text=1;
+        Tabstop tabstop=2;
+        Functor functor=3;
+    }
+}
+
+//same as variables in the vscode snipptet syntax, but trying to do two things:
+//1. rethink the syntax to support programmatic snippets
+//2. avoid hardcoding support for a set of variables
+//A functor is a thing which may take arguments transforms each step(keystroke)
+//until devolving to regular text
+message Functor {
+    optional string text=1;
+    }
+
+message CompletionsRequest {
+  string session_id = 1;
+  string uri = 2;
+  bytes user_input = 3;
+}
+
+message CompletionsResponse { repeated SnippetInfo completions = 1; }
+
+message TargetRequest {
+  string session_id = 1;
+  string uri = 2;
+  string language = 3;
+}
+
+message TargetResponse { bool success = 1; }
+
+message SnippetRequest {
+  string session_id = 1;
+  string uri = 2;
+  string snippet_name = 3;
+}
+
+
+message SnippetResponse {
+  oneof snippetComponent {
+    string text=1;
+    Tabstop tabstop=2;
+    Functor var=3;
+  }  
+}
+//TODO
+//message FunctorRequest {}
