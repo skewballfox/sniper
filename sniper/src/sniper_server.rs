@@ -5,10 +5,7 @@ use futures::lock::Mutex;
 
 use qp_trie::Trie;
 use sniper_common::service::{SniperService, SnippetInfo};
-use tarpc::{
-    context,
-    server::{self, Channel, Incoming},
-};
+use 
 use tokio::sync::RwLock;
 
 use crate::{config::SniperConfig, snippet_manager::SnippetManager, target::TargetData};
@@ -33,7 +30,7 @@ impl SniperServer {
         }
     }
 }
-#[tarpc::server]
+
 impl SniperService for SniperServer {
     /// add a session to the list of currently tracked sessions
     async fn add_target(
