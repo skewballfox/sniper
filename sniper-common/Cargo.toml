@@ -2,7 +2,7 @@
 name = "sniper-common"
 version = "0.1.0"
 authors = ["Joshua Ferguson <joshua.ferguson.273@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 #[build-dependencies]

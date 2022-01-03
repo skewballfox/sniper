@@ -2,7 +2,7 @@
 name = "sniper-server"
 version = "0.1.0"
 authors = ["Joshua Ferguson <joshua.ferguson.273@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 #[build-dependencies]
@@ -16,11 +16,11 @@ sniper-common={path="../sniper-common"}
 anyhow = "1.0"
 futures = "0.3.14"
 serde_json = "1"
-tarpc = {version="0.26.2", features = ["tokio1","serde-transport"] }
+#tarpc = {version="0.26.2", features = ["tokio1","serde-transport"] }
 tokio = {version="1.5.0",features=["net","macros","rt-multi-thread"]}#NOTE: more features may be added (as required)
 tokio-serde={version="0.8",features=["bincode"]}
 tokio-util={version="0.6.6",features=["codec"]}
-dashmap = {version="4.0.2", features=["serde","rayon"]}
+dashmap = {version="^5.0", features=["serde","rayon"]}
 qp-trie={version="0.7.6",features=["serde"]}
 rayon = {version="1.5"}
 serde-tuple-vec-map={version="1.0.0"}
@@ -29,14 +29,20 @@ lazy_static= "1.4.0"
 serde = {version="1.0.115", features=["derive"]}
 serde_bytes={version="0.11.5"}
 toml = {version="0.5", features = ["preserve_order"]}#NOTE: still used for config
-directories = "3.0"
+directories = "^4.0.1"
 daemonize = "0.4.1"
 libc = "0.2.71"
-whoami = "0.8.2"
+whoami = "^1.2"
 #umask="1.0.0"
-nom="6.2.1"
+nom="^7.1"
 tracing = { version = "0.1" }
-tracing-opentelemetry = "0.12"
-opentelemetry = { version = "0.13", features = ["rt-tokio"] }
-opentelemetry-jaeger = { version = "0.12", features = ["tokio"] }
-tracing-subscriber = "0.2"
+tracing-opentelemetry = "0.16"
+opentelemetry = { version = "0.16", features = ["rt-tokio"] }
+opentelemetry-jaeger = { version = "0.15", features = ["tokio"] }
+tracing-subscriber = "^0.3"
+
+prost = "0.9.0"
+prost-types = "0.9"
+
+[build-dependencies]
+prost-build = "0.9.0"
