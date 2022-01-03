@@ -7,5 +7,5 @@ service SniperService {
 
   rpc get_completions(stream CompletionsRequest)
       returns (stream CompletionsResponse);
-  rpc get_snippet(SnippetRequest) returns (stream SnippetResponse)
+  rpc get_snippet(SnippetRequest) returns (stream SnippetResponse);
 }
