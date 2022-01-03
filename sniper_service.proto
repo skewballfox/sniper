@@ -1,5 +1,7 @@
-syntax="proto3";
+syntax = "proto3";
 import "sniper.proto";
+
+package sniper.service;
 
 service SniperService {
   rpc add_target(TargetRequest) returns (TargetResponse);
