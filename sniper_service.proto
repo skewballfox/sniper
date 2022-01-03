@@ -1,3 +1,5 @@
+import "sniper.proto";
+
 service SniperService {
   rpc add_target(TargetRequest) returns (TargetResponse);
   rpc drop_target(TargetRequest) returns (TargetResponse);
