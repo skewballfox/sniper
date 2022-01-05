@@ -7,13 +7,15 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 #[build-dependencies]
 
+
 [[bin]]
 name="sniper"
 path="src/main.rs"
 
 [dependencies]
-sniper-common={path="../sniper-common"}
+#sniper-common={path="../sniper-common"}
 anyhow = "1.0"
+async-stream = "0.3"
 futures = "0.3.14"
 serde_json = "1"
 #tarpc = {version="0.26.2", features = ["tokio1","serde-transport"] }
@@ -35,14 +37,18 @@ libc = "0.2.71"
 whoami = "^1.2"
 #umask="1.0.0"
 nom="^7.1"
+tonic="0.6.2"
+prost = "0.9.0"
+prost-types = "0.9"
+futures-util = "0.3"
+#TODO: put these behind a feature flag
 tracing = { version = "0.1" }
 tracing-opentelemetry = "0.16"
 opentelemetry = { version = "0.16", features = ["rt-tokio"] }
 opentelemetry-jaeger = { version = "0.15", features = ["tokio"] }
 tracing-subscriber = "^0.3"
 
-prost = "0.9.0"
-prost-types = "0.9"
-
 [build-dependencies]
-prost-build = "0.9.0"
+tonic-build = "0.6.2"
+serde = {version="1.0.115", features=["derive"]}
+#prost-build = "0.9.0"
