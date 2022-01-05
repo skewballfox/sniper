@@ -1,5 +1,18 @@
 syntax = "proto3";
 
+package sniper;
+
+service Sniper {
+  rpc AddTarget(TargetRequest) returns (Void);
+  rpc DropTarget(TargetRequest) returns (Void);
+
+  rpc GetCompletions(CompletionsRequest) returns (CompletionsResponse);
+  rpc GetCompletionsStream(stream CompletionsRequest)
+      returns (stream CompletionsResponse);
+
+  rpc GetSnippet(SnippetRequest) returns (stream SnippetResponse);
+}
+
 message SnippetInfo {
   string name = 1;
   string description = 2;
@@ -39,7 +52,7 @@ message TargetRequest {
   string language = 3;
 }
 
-message TargetResponse { bool success = 1; }
+message Void {}
 
 message SnippetRequest {
   string session_id = 1;
