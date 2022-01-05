@@ -1,38 +1,37 @@
 mod config;
+
+mod parser;
+mod server;
 mod snippet;
 mod snippet_manager;
 mod target;
-
-mod sniper_server;
+mod util;
 
 use config::SniperConfig;
 use daemonize::Daemonize;
 use dashmap::DashMap;
-use sniper_common::service::SniperService; //, shutdown_tracer_provider};
+
 use snippet_manager::SnippetManager;
 use tokio_serde::formats::Bincode;
 
 use std::{os::unix::fs::DirBuilderExt, sync::Arc};
 
 //use futures::{future, lock::Mutex, prelude::*};
-use tarpc::{
-    serde_transport,
-    server::{self, Channel, Incoming},
-};
+
 use tokio::net::UnixListener;
 use tokio_util::codec::length_delimited::LengthDelimitedCodec;
 
-use crate::sniper_server::SniperServer;
+use crate::server::Server;
 
 #[tokio::main]
 async fn main() {
     //free the socket created by old instances
-    let _ = std::fs::remove_file(sniper_common::SOCKET_PATH);
+    let _ = std::fs::remove_file("/tmp/sniper.socket");
 
     //initialize jaeger tracing
-    sniper_common::init_tracing("Sniper Server").expect("failed to initialize tracing");
+    //sniper_common::init_tracing("Sniper Server").expect("failed to initialize tracing");
     //create a lister on the specified socket
-    let listener = UnixListener::bind(sniper_common::SOCKET_PATH).unwrap();
+    let listener = UnixListener::bind("/tmp/sniper.socket").unwrap();
 
     let codec_builder = LengthDelimitedCodec::builder();
 
@@ -44,13 +43,13 @@ async fn main() {
 
     loop {
         let (stream, _addr) = listener.accept().await.unwrap();
-        let framed_stream = codec_builder.new_framed(stream);
+        /*let framed_stream = codec_builder.new_framed(stream);
         let transport = serde_transport::new(framed_stream, Bincode::default());
 
-        let sniper_server =
-            SniperServer::new(config.clone(), targets.clone(), snippet_manager.clone());
+        let sniper_server = Server::new(config.clone(), targets.clone(), snippet_manager.clone());
         let fut = server::BaseChannel::with_defaults(transport).execute(sniper_server.serve());
         println!("request received");
         tokio::spawn(fut);
+        */
     }
 }

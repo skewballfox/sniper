@@ -8,11 +8,12 @@ use rayon::{
     vec,
 };
 use regex::Regex;
-use sniper_common::service::SnippetInfo;
+//use sniper_common::service::SnippetInfo;
 
 use crate::{
     snippet::{Loader, SnipComponent, Snippet, SnippetBuildMetadata, SnippetSet},
     target::TargetData,
+    util::sniper_proto::SnippetInfo,
 };
 
 use std::{
@@ -116,5 +117,8 @@ impl SnippetManager {
         self.snippet_sets
             .remove(&(language.into(), snip_set_to_drop.into()));
     }
+    //TODO: implement increment/decrement after implementing TargetManager struct
+    //use iterator to handle both managers at once?
+    //pub fn increment(&self, )
 }
 mod parser;

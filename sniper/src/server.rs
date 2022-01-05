@@ -1,23 +1,32 @@
-use std::sync::Arc;
-
+use async_stream::try_stream;
 use dashmap::DashMap;
 use futures::lock::Mutex;
+use futures_util::{stream, StreamExt, TryStreamExt};
+use std::sync::Arc;
 
+use prost::{self, Message};
 use qp_trie::Trie;
-use sniper_common::service::{SniperService, SnippetInfo};
-use 
-use tokio::sync::RwLock;
+//use sniper_common::service::{SniperService, SnippetInfo};
 
+use tokio::sync::RwLock;
+use tonic::{codegen::futures_core, Request, Response, Status, Streaming};
+
+use crate::util::sniper_proto::{SnippetRequest, SnippetResponse};
 use crate::{config::SniperConfig, snippet_manager::SnippetManager, target::TargetData};
 
+use crate::util::sniper_proto::{
+    sniper_server::Sniper, CompletionsRequest, CompletionsResponse, SnippetInfo, TargetRequest,
+    Void,
+};
+
 #[derive(Clone)]
-pub(crate) struct SniperServer {
+pub(crate) struct Server {
     pub(crate) config: Arc<SniperConfig>,
     pub(crate) targets: Arc<DashMap<(String, String), TargetData>>,
     pub(crate) snippet_manager: SnippetManager,
 }
 
-impl SniperServer {
+impl Server {
     pub fn new(
         config: Arc<SniperConfig>,
         targets: Arc<DashMap<(String, String), TargetData>>,
@@ -30,16 +39,20 @@ impl SniperServer {
         }
     }
 }
+type Stream<T> = std::pin::Pin<
+    Box<dyn futures_core::Stream<Item = std::result::Result<T, Status>> + Send + 'static>,
+>;
 
-impl SniperService for SniperServer {
+#[tonic::async_trait]
+impl Sniper for Server {
     /// add a session to the list of currently tracked sessions
-    async fn add_target(
-        self,
-        _: context::Context,
-        session_id: String,
-        uri: String,
-        language: String,
-    ) {
+    async fn add_target(&self, request: Request<TargetRequest>) -> Result<Response<Void>, Status> {
+        let TargetRequest {
+            session_id,
+            uri,
+            language,
+        } = request.into_inner();
+
         println!("adding target: {:?},{:?},{:?}", session_id, uri, language);
         //let sniper=self.snip_lock.read().await;
         if self
@@ -47,9 +60,9 @@ impl SniperService for SniperServer {
             .contains_key(&(session_id.clone(), uri.clone()))
         {
             println!("target already tracked");
-            return;
-        }
 
+            return Ok(Response::new(Void {}));
+        }
         println!("loaded vars");
         //let targets=&*self.targets;
         if self.config.languages.contains_key(&language) {
@@ -88,19 +101,19 @@ impl SniperService for SniperServer {
             //should have some way of mitigating request for adding nonviable targets
             //client side
         }
-        println!("target_added")
+        println!("target_added");
+        Ok(Response::new(Void {}))
     }
 
     /// drop a target,
     /// drop a snippet set if no longer required by any targets
     /// exit sniper if no targets left
-    async fn drop_target(
-        self,
-        _: context::Context,
-        session_id: String,
-        uri: String,
-        language: String,
-    ) {
+    async fn drop_target(&self, request: Request<TargetRequest>) -> Result<Response<Void>, Status> {
+        let TargetRequest {
+            session_id,
+            uri,
+            language,
+        } = request.into_inner();
         let target_key = &(session_id.to_string(), uri.to_string());
 
         println!("dropping target: {:?}", target_key);
@@ -122,50 +135,83 @@ impl SniperService for SniperServer {
                 }
             }
         }
-        if self.targets.is_empty() {
-            println!("todo");
-            //sys.exit(0);
-        }
+        Ok(Response::new(Void {}))
     }
-
-    /*async fn target_add_libs(self,_:context::Context,session_id: String, uri: String, libs: Vec<String>) {
-        todo!()
-    }
-
-    async fn target_drop_libs(self,_:context::Context,session_id: String, uri: String, libs: Vec<String>) {
-        todo!()
-    }
-    */
 
     async fn get_completions(
-        self,
-        _: context::Context,
-        session_id: String,
-        uri: String,
-        input: Vec<u8>,
-    ) -> Vec<SnippetInfo> {
-        println!("{:?}", String::from_utf8(input.clone()));
+        &self,
+        request: Request<CompletionsRequest>,
+    ) -> Result<Response<CompletionsResponse>, Status> {
+        let CompletionsRequest {
+            session_id,
+            uri,
+            user_input: keyboard_input,
+        } = request.into_inner();
+        println!("{:?}", String::from_utf8(keyboard_input.clone()));
         let target_key = (session_id, uri);
         let snippet_manager = self.snippet_manager.clone();
         let completions: Vec<SnippetInfo> = match Arc::clone(&self.targets).entry(target_key) {
             dashmap::mapref::entry::Entry::Occupied(ref target) => target
                 .get()
                 .triggers
-                .iter_prefix(&input)
+                .iter_prefix(&keyboard_input)
                 .map(|(_trig, snip)| snip.clone())
                 .collect::<Vec<SnippetInfo>>(),
             dashmap::mapref::entry::Entry::Vacant(_) => Vec::new(),
         };
-        completions
+        Ok(Response::new(CompletionsResponse { completions }))
     }
 
+    async fn get_completions_stream(
+        &self,
+        req: Request<Streaming<CompletionsRequest>>,
+    ) -> Result<Response<Stream<CompletionsResponse>>, Status> {
+        let mut stream = req.into_inner();
+
+        if let Some(first_msg) = stream.message().await? {
+            let single_message = stream::iter(vec![Ok(first_msg)]);
+            let mut stream = single_message.chain(stream);
+
+            let stream = try_stream! {
+            let snippet_manager = self.snippet_manager.clone();
+            while let Some(msg) = stream.try_next().await? {
+
+                let CompletionsRequest{session_id,uri,user_input:keyboard_input}=msg;
+                let target_key = (session_id, uri);
+                println!("{:?}", String::from_utf8(keyboard_input.clone()));
+
+
+            let completions: Vec<SnippetInfo> = match Arc::clone(&self.targets).entry(target_key) {
+                dashmap::mapref::entry::Entry::Occupied(ref target) => target
+                    .get()
+                    .triggers
+                    .iter_prefix(&keyboard_input)
+                    .map(|(_trig, snip)| snip.clone())
+                    .collect::<Vec<SnippetInfo>>(),
+                dashmap::mapref::entry::Entry::Vacant(_) => Vec::new(),
+            };
+            yield CompletionsResponse { completions: completions.into() };
+
+            }};
+            return Ok(Response::new(
+                Box::pin(stream) as Stream<CompletionsResponse>
+            ));
+        } else {
+            let stream = stream::empty();
+            return Ok(Response::new(
+                Box::pin(stream) as Stream<CompletionsResponse>
+            ));
+        }
+    }
     async fn get_snippet(
-        self,
-        _: context::Context,
-        session_id: String,
-        uri: String,
-        snippet_name: String,
-    ) -> Option<Vec<String>> {
+        &self,
+        request: Request<SnippetRequest>,
+    ) -> Result<Response<Stream<SnippetResponse>>, Status> {
+        let SnippetRequest {
+            session_id,
+            uri,
+            snippet_name,
+        } = request.into_inner();
         let language = self
             .targets
             .get(&(session_id.to_string(), uri.to_string()))

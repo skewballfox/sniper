@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 //these are the currently (planned) supported actions for snippets
 #[derive(Deserialize, Clone, Debug)]
 #[serde(tag = "action", content = "args")]
@@ -31,8 +31,10 @@ pub struct Snippet {
     is_conditional: bool,
     #[serde(default = "no_action")]
     actions: Vec<Actions>,
+    //TODO: remove once fully migrated to incremental parsing
     #[serde(default = "assembly_required")]
     pub(crate) requires_assembly: bool,
+    //TODO: remove if this turns out to not be necessary with incremental parsing
     #[serde(default = "currently_empty")]
     pub(crate) tabstops: Vec<(usize, usize, usize)>,
 }
@@ -93,6 +95,12 @@ impl SnippetSet {
             true
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct SnippetInfo {
+    pub name: String,
+    pub description: String,
 }
 
 //for rebuilding snippets
