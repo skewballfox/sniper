@@ -60,6 +60,6 @@ message SnippetRequest {
   string snippet_name = 3;
 }
 
-message SnippetResponse { repeated SnippetComponent snippet_components = 1; }
+message SnippetResponse { SnippetComponent snippet_components = 1; }
 // TODO
 // message FunctorRequest {}
