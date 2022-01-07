@@ -1,7 +1,7 @@
 use iter::empty;
 
-use dashmap::{iter::Iter, DashMap};
-use qp_trie::Trie;
+use dashmap::{iter::Iter, DashMap, ReadOnlyView};
+
 //use futures::lock::Mutex;
 use rayon::{
     iter::{IntoParallelIterator, ParallelIterator},
@@ -11,9 +11,9 @@ use regex::Regex;
 //use sniper_common::service::SnippetInfo;
 
 use crate::{
-    snippet::{Loader, SnipComponent, Snippet, SnippetBuildMetadata, SnippetSet},
+    snippet::{Loader, Snippet, SnippetSet},
     target::TargetData,
-    util::sniper_proto::SnippetInfo,
+    util::sniper_proto::{SnippetComponent, SnippetInfo},
 };
 
 use std::{
@@ -82,7 +82,7 @@ impl SnippetManager {
             .get(&(language.clone(), snippet_set.to_string()))
             .unwrap()
             .contents
-            .clone()
+            .clone() //TODO: figure out how to avoid cloning
             .into_iter()
             .map(move |s| {
                 (
@@ -120,5 +120,35 @@ impl SnippetManager {
     //TODO: implement increment/decrement after implementing TargetManager struct
     //use iterator to handle both managers at once?
     //pub fn increment(&self, )
+
+    pub fn fire<S>(&self, language: S, snippet_name: S) -> impl Iterator<Item = SnippetComponent>
+    where
+        S: Into<String>,
+    {
+        let ammo = (*self.snippets).clone().into_read_only();
+        //clone().into_read_only();
+        chamber(language, snippet_name, ammo)
+    }
+}
+
+fn chamber<S>(
+    language: S,
+    snippet_name: S,
+    ammo: ReadOnlyView<(String, String), Snippet>,
+) -> impl Iterator<Item = SnippetComponent>
+where
+    S: Into<String>,
+{
+    let snippet_key = &(language.into(), snippet_name.into());
+
+    match ammo.get(snippet_key) {
+        Some(snippet) => {
+            snippet.body.into_iter().for_each(|line|{}
+
+            )
+            iter::empty::<SnippetComponent>()
+        },
+        None => iter::empty::<SnippetComponent>(),
+    }
 }
 mod parser;
