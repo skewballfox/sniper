@@ -7,29 +7,34 @@ mod snippet_manager;
 mod target;
 mod util;
 
-use config::SniperConfig;
-use daemonize::Daemonize;
-use dashmap::DashMap;
+use crate::config::SniperConfig;
+use crate::server::Sniper;
 
-use snippet_manager::SnippetManager;
-use tokio_serde::formats::Bincode;
+use crate::snippet_manager::SnippetManager;
+use crate::util::sniper_proto::sniper_server::SniperServer;
 
-use std::{os::unix::fs::DirBuilderExt, sync::Arc};
+use std::path::Path;
+use std::sync::Arc;
 
 //use futures::{future, lock::Mutex, prelude::*};
 
+use futures::TryFutureExt;
 use tokio::net::UnixListener;
 use tokio_util::codec::length_delimited::LengthDelimitedCodec;
+use tonic::transport::Server;
+//use daemonize::Daemonize;
+use dashmap::DashMap;
 
-use crate::server::Server;
-
+#[cfg(unix)]
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let path = "/tmp/sniper.socket";
     //free the socket created by old instances
-    let _ = std::fs::remove_file("/tmp/sniper.socket");
+    let _ = tokio::fs::remove_file(path);
 
+    tokio::fs::create_dir_all(Path::new(path).parent().unwrap()).await?;
     //initialize jaeger tracing
-    //sniper_common::init_tracing("Sniper Server").expect("failed to initialize tracing");
+    util::init_tracing("Sniper Server").expect("failed to initialize tracing");
     //create a lister on the specified socket
     let listener = UnixListener::bind("/tmp/sniper.socket").unwrap();
 
@@ -41,15 +46,34 @@ async fn main() {
     let snippet_sets = Arc::new(DashMap::new());
     let snippet_manager = SnippetManager::new(snippets.clone(), snippet_sets.clone());
 
-    loop {
-        let (stream, _addr) = listener.accept().await.unwrap();
-        /*let framed_stream = codec_builder.new_framed(stream);
-        let transport = serde_transport::new(framed_stream, Bincode::default());
+    let sniper = Sniper::new(config.clone(), targets.clone(), snippet_manager.clone());
+    //loop {
+    let (stream, _addr) = listener.accept().await.unwrap();
+    /*let framed_stream = codec_builder.new_framed(stream);
+    let transport = serde_transport::new(framed_stream, Bincode::default());
 
-        let sniper_server = Server::new(config.clone(), targets.clone(), snippet_manager.clone());
-        let fut = server::BaseChannel::with_defaults(transport).execute(sniper_server.serve());
-        println!("request received");
-        tokio::spawn(fut);
-        */
-    }
+    let sniper_server = Server::new(config.clone(), targets.clone(), snippet_manager.clone());
+    let fut = server::BaseChannel::with_defaults(transport).execute(sniper_server.serve());
+    println!("request received");
+    tokio::spawn(fut);
+    */
+    //}
+    let incoming = {
+        let uds = UnixListener::bind(path)?;
+
+        async_stream::stream! {
+            loop {
+                let item = uds.accept().map_ok(|(st, _)| crate::util::unix::UnixStream(st)).await;
+
+                yield item;
+            }
+        }
+    };
+
+    Server::builder()
+        .add_service(SniperServer::new(sniper))
+        .serve_with_incoming(incoming)
+        .await?;
+
+    Ok(())
 }

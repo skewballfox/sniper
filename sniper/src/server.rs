@@ -12,21 +12,22 @@ use tokio::sync::RwLock;
 use tonic::{codegen::futures_core, Request, Response, Status, Streaming};
 
 use crate::util::sniper_proto::{SnippetRequest, SnippetResponse};
+use crate::util::Stream;
 use crate::{config::SniperConfig, snippet_manager::SnippetManager, target::TargetData};
 
 use crate::util::sniper_proto::{
-    sniper_server::Sniper, CompletionsRequest, CompletionsResponse, SnippetInfo, TargetRequest,
-    Void,
+    sniper_server::Sniper as SniperService, CompletionsRequest, CompletionsResponse, SnippetInfo,
+    TargetRequest, Void,
 };
 
 #[derive(Clone)]
-pub(crate) struct Server {
+pub(crate) struct Sniper {
     pub(crate) config: Arc<SniperConfig>,
     pub(crate) targets: Arc<DashMap<(String, String), TargetData>>,
     pub(crate) snippet_manager: SnippetManager,
 }
 
-impl Server {
+impl Sniper {
     pub fn new(
         config: Arc<SniperConfig>,
         targets: Arc<DashMap<(String, String), TargetData>>,
@@ -39,12 +40,9 @@ impl Server {
         }
     }
 }
-type Stream<T> = std::pin::Pin<
-    Box<dyn futures_core::Stream<Item = std::result::Result<T, Status>> + Send + 'static>,
->;
 
 #[tonic::async_trait]
-impl Sniper for Server {
+impl SniperService for Sniper {
     /// add a session to the list of currently tracked sessions
     async fn add_target(&self, request: Request<TargetRequest>) -> Result<Response<Void>, Status> {
         let TargetRequest {
@@ -203,6 +201,8 @@ impl Sniper for Server {
             ));
         }
     }
+
+    ///gets and builds a snippet viaBidirectional Streaming
     async fn get_snippet(
         &self,
         request: Request<SnippetRequest>,
@@ -212,36 +212,18 @@ impl Sniper for Server {
             uri,
             snippet_name,
         } = request.into_inner();
+
         let language = self
             .targets
             .get(&(session_id.to_string(), uri.to_string()))
             .unwrap()
             .language
             .clone();
+
         let snippet_key = &(language.to_string(), snippet_name.to_string());
 
-        let mut assembly_required = false;
-        let mut not_found = false;
-        let mut snippet_body = Vec::new();
         println!("{:?} requested", snippet_name);
         if self.snippet_manager.snippets.contains_key(snippet_key) {
-            if self
-                .snippet_manager
-                .snippets
-                .get(snippet_key)
-                .unwrap()
-                .requires_assembly
-            {
-                assembly_required = true;
-            } else {
-                snippet_body = self
-                    .snippet_manager
-                    .snippets
-                    .get(snippet_key)
-                    .unwrap()
-                    .body
-                    .clone()
-            }
         } else {
             println!("snippet not found");
             println!("snippets: {:?}", self.snippet_manager.snippets);
@@ -249,21 +231,8 @@ impl Sniper for Server {
         }
 
         if not_found {
-            None
+            yield None
         } else {
-            if assembly_required {
-                //only acquire writelock when necessary
-
-                self.snippet_manager
-                    .rebuild_snippets(&language, snippet_name.into());
-                snippet_body = self
-                    .snippet_manager
-                    .snippets
-                    .get(snippet_key)
-                    .unwrap()
-                    .body
-                    .clone();
-            }
             Some(snippet_body)
         }
     }

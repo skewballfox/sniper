@@ -21,6 +21,7 @@ Sniper is an editor agnostic stateful snippet manager. The snippet syntax is cur
   - and (eventually) package-based and hands-off: just install the server and don't worry about the rest, unless you want to
 
 my goal since the beginning of this project has been to make a system that goes beyond providing basic autocompletion and support context aware dynamic code generation.  
+
 #### Ok, now I'm interested
 
 IMO, part of the reason snippets aren't more widely used is because of the individual effort involved. You could install the base snippets you have for your editor, but they aren't really flexible enough to justify putting a lot of time into creating custom ones. With snippet managers like [ultisnips](https://github.com/SirVer/ultisnips) or [hsnips](https://github.com/draivin/hsnips)(which I feel are powerful enough to justify use) if you make snippets for those tools, their utility is limited to a small subset of developers using the same editor and plugin. In both cases suggestions and the list of options isn't changed by file/project specific context, such as whether a certain library is imported. if you snippets for numpy, other than swapping out the snippets being loaded, they will always remain suggested. This project is set up to load a base set of snippets, with the ability to load snippet libraries as needed (hopefully automatically depending on what I can get from the in play language server).

@@ -1181,7 +1181,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "futures",
- "opentelemetry 0.13.0",
+ "opentelemetry 0.16.0",
  "opentelemetry-jaeger 0.12.1",
  "serde",
  "tarpc",
