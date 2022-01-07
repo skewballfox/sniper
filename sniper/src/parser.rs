@@ -34,18 +34,48 @@ fn text(snippet_string: &str) -> IResult<&str, Token> {
     //\t$
     map(take_until("$"), |s: &str| Token::Text(s.into()))(snippet_string)
 }
-///Used for the names of snippets, may be extended to take arguments for those snippets
-fn snippet_name(snippet_string: &str) -> IResult<&str, Token> {
-    //$!if
-    //{!elif} NOTE: still working out what snippet args should look like
-    map(alphanumeric1, |s: &str| Token::Snippet(s.into()))(snippet_string)
+
+///function for everything that isn't raw text,children parsers are called depending on presence of brackets
+fn non_text_token(snippet_string: &str) -> IResult<&str, Token> {
+    //$!if, {!elif}
+    //$TM_SELECTED_TEXT, ${TM_FILENAME/(.*)\..+$/$1/}
+    //$1, ${1:expression}, ${1|text,alternative|}
+    preceded(char('$'), alt((nested_component, raw_component)))(snippet_string)
 }
+
+///Used for non_text_tokens without brackets, which don't take arguments
+fn raw_component(snippet_string: &str) -> IResult<&str, Token> {
+    alt((
+        tabstop,      //$1
+        snippet_name, //$!if
+        variable,     //TM_SELECTED_TEXT
+    ))(snippet_string)
+}
+
+fn nested_component(snippet_string: &str) -> IResult<&str, Token> {
+    delimited(
+        char('{'),
+        alt((
+            placeholder,     //{1}, {1:text}, {1|text,alternative|}
+            snippet_object,  //${!if}, etc...
+            nested_variable, //{!if}, {TM_FILENAME/(.*)\..+$/$1/}
+        )),
+        char('}'),
+    )(snippet_string)
+}
+
+//NOTE: working out the details on how to support programmatic snippets
+//but I'm thinking about handling variables as functors with only one step
+
+///basic variable without transform
 fn variable(snippet_string: &str) -> IResult<&str, Token> {
     //TM_SELECTED_TEXT
     map(alphanumeric1, |s: &str| -> Token {
         Token::Variable(s.to_string(), None)
     })(snippet_string)
 }
+
+///variable in bracket which may have a transform
 fn nested_variable(snippet_string: &str) -> IResult<&str, Token> {
     //{TM_SELECTED_TEXT}
     //${TM_FILENAME/(.*)\..+$/$1/}
@@ -59,42 +89,7 @@ fn nested_variable(snippet_string: &str) -> IResult<&str, Token> {
     return Ok((snippet_string, Token::Variable(res.into(), args)));
 }
 
-fn placeholder_text(snippet_string: &str) -> IResult<&str, Token> {
-    //text}
-    //|text,alternative|
-    //another ${2:placeholder}
-    let (snippet_string, snip_component): _ = take_till(|c| c == '$' || c == '}')(snippet_string)?;
-
-    return Ok((snippet_string, Token::Text(snip_component.to_string())));
-}
-
-///function for everything that isn't raw text,children parsers are called depending on presence of brackets
-fn non_text_token(snippet_string: &str) -> IResult<&str, Token> {
-    //$!if, {!elif}
-    //$TM_SELECTED_TEXT, ${TM_FILENAME/(.*)\..+$/$1/}
-    //$1, ${1:expression}, ${1|text,alternative|}
-    preceded(char('$'), alt((nested_component, raw_component)))(snippet_string)
-}
-
-fn nested_component(snippet_string: &str) -> IResult<&str, Token> {
-    delimited(
-        char('{'),
-        alt((
-            placeholder,    //{1},{1:text},{1|text,alternative|}
-            snippet_object, //{!if},${TM_FILENAME/(.*)\..+$/$1/}
-        )),
-        char('}'),
-    )(snippet_string)
-}
-
-fn raw_component(snippet_string: &str) -> IResult<&str, Token> {
-    alt((
-        tabstop,        //$1
-        snippet_object, //$!if
-        variable,       //TM_SELECTED_TEXT
-    ))(snippet_string)
-}
-
+///used for basic tabstops which don't have optional arguments
 fn tabstop(snippet_string: &str) -> IResult<&str, Token> {
     //$1
     //NOTE: may simplify tabstop, placeholder, and placeholder arguments to a single function
@@ -103,6 +98,8 @@ fn tabstop(snippet_string: &str) -> IResult<&str, Token> {
 
     Ok((snippet_string, Token::Tabstop(tabstop_value, None)))
 }
+
+///used for placeholders which may have values or a list of possible values
 fn placeholder(snippet_string: &str) -> IResult<&str, Token> {
     //${1:another ${2:placeholder}}
     //{1},{1:text},{1|text,alternative|}
@@ -115,6 +112,8 @@ fn placeholder(snippet_string: &str) -> IResult<&str, Token> {
     ))
 }
 
+///Used for the content of the placeholders, which are snippet tokens themselves
+/// this could be used for an almost endless customization options even without programmatic snippets
 fn placeholder_arguments(snippet_string: &str) -> IResult<&str, Vec<Token>> {
     //:another ${2:placeholder}
     //:text},|text,alternative|
@@ -131,15 +130,32 @@ fn placeholder_arguments(snippet_string: &str) -> IResult<&str, Vec<Token>> {
     ))(snippet_string)?;
     Ok((snippet_string, placeholder_args))
 }
-fn snippet_object(snippet_string: &str) -> IResult<&str, Token> {
-    alt((
-        preceded(
-            tag("!"), //NOTE: depending on the implementation extra char specifier may not be necessary
-            snippet_name,
-        ),
-        variable,
-    ))(snippet_string)
+
+///used for the text which composes a placeholder argument, which needs to stop in multiple cases
+/// may wind up needing to split this into multiple functions
+fn placeholder_text(snippet_string: &str) -> IResult<&str, Token> {
+    //text}
+    //|text,alternative|
+    //another ${2:placeholder}
+    let (snippet_string, snip_component): _ = take_till(
+        |c| c == '$' || c == '}', //|| c == '|' || c == ','
+    )(snippet_string)?;
+
+    return Ok((snippet_string, Token::Text(snip_component.to_string())));
 }
+
+///Used for the names of snippets, may be extended to take arguments for those snippets
+fn snippet_name(snippet_string: &str) -> IResult<&str, Token> {
+    //$!if
+    //{!elif} NOTE: still working out what snippet args should look like
+    map(alphanumeric1, |s: &str| Token::Snippet(s.into()))(snippet_string)
+}
+
+///placeholder for function which will handle nested snippet=s with optional arguments
+fn snippet_object(snippet_string: &str) -> IResult<&str, Token> {
+    snippet_name(snippet_string)
+}
+
 //This will call text followed by non_text in a cycle, until the end of the stream
 pub fn snippet_component(snippet_string: &str) -> IDONTKNOWYET {
     many_till(pair(text, opt(non_text_token)), tag("eof"));
