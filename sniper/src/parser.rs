@@ -68,7 +68,11 @@ fn placeholder_text(snippet_string: &str) -> IResult<&str, Token> {
     return Ok((snippet_string, Token::Text(snip_component.to_string())));
 }
 
+///function for everything that isn't raw text,children parsers are called depending on presence of brackets
 fn non_text_token(snippet_string: &str) -> IResult<&str, Token> {
+    //$!if, {!elif}
+    //$TM_SELECTED_TEXT, ${TM_FILENAME/(.*)\..+$/$1/}
+    //$1, ${1:expression}, ${1|text,alternative|}
     preceded(char('$'), alt((nested_component, raw_component)))(snippet_string)
 }
 
@@ -110,7 +114,10 @@ fn placeholder(snippet_string: &str) -> IResult<&str, Token> {
         Token::Tabstop(tabstop_value, Some(tabstop_args)),
     ))
 }
+
 fn placeholder_arguments(snippet_string: &str) -> IResult<&str, Vec<Token>> {
+    //:another ${2:placeholder}
+    //:text},|text,alternative|
     let (snippet_string, placeholder_args) = alt((
         map(preceded(char(':'), placeholder_text), |res| vec![res]),
         delimited(
@@ -133,7 +140,7 @@ fn snippet_object(snippet_string: &str) -> IResult<&str, Token> {
         variable,
     ))(snippet_string)
 }
-
+//This will call text followed by non_text in a cycle, until the end of the stream
 pub fn snippet_component(snippet_string: &str) -> IDONTKNOWYET {
     many_till(pair(text, opt(non_text_token)), tag("eof"));
 }
