@@ -202,7 +202,7 @@ impl SniperService for Sniper {
         }
     }
 
-    ///gets and builds a snippet viaBidirectional Streaming
+    ///gets and builds a snippet via Bidirectional Streaming
     async fn get_snippet(
         &self,
         request: Request<SnippetRequest>,
@@ -220,20 +220,18 @@ impl SniperService for Sniper {
             .language
             .clone();
 
-        let snippet_key = &(language.to_string(), snippet_name.to_string());
+        let snippet_manager = self.snippet_manager.clone();
 
-        println!("{:?} requested", snippet_name);
-        if self.snippet_manager.snippets.contains_key(snippet_key) {
-        } else {
-            println!("snippet not found");
-            println!("snippets: {:?}", self.snippet_manager.snippets);
-            not_found = true;
-        }
+        let stream = try_stream! {
+            for component in snippet_manager.fire(language,snippet_name) {
+                yield component;
+            }
+        };
 
-        if not_found {
-            yield None
-        } else {
-            Some(snippet_body)
-        }
+        Ok(Response::new(Box::pin(stream) as Stream<SnippetResponse>))
     }
+
+    type GetCompletionsStreamStream = Response<Stream<CompletionsResponse>>;
+
+    type GetSnippetStream = Response<Stream<SnippetResponse>>;
 }

@@ -6,15 +6,15 @@ use nom::{
     branch::alt,
     bytes::streaming::{tag, take_till, take_until, take_while},
     character::streaming::{alphanumeric1, char, digit1},
-    combinator::{map, map_res, opt},
+    combinator::{iterator, map, map_res, opt},
     error::ParseError,
-    multi::{many_till, separated_list1},
+    multi::{fold_many1, many_till, separated_list1},
     sequence::{delimited, pair, preceded},
     IResult, Parser,
 };
 
 #[derive(Clone, Debug, PartialEq)]
-enum Token {
+pub(crate) enum Token {
     Tabstop(u32, Option<Vec<Token>>),
     Text(String),
     Variable(String, Option<String>),
@@ -157,8 +157,25 @@ fn snippet_object(snippet_string: &str) -> IResult<&str, Token> {
 }
 
 //This will call text followed by non_text in a cycle, until the end of the stream
-pub fn snippet_component(snippet_string: &str) -> IDONTKNOWYET {
-    many_till(pair(text, opt(non_text_token)), tag("eof"));
+pub fn snippet_component(snippet_string: &str) -> Vec<Token> {
+    iterator(
+        snippet_string,
+        fold_many1(
+            pair(opt(text), opt(non_text_token)),
+            Vec::new,
+            |mut acc: Vec<_>, (first, second)| {
+                if let Some(res) = first {
+                    acc.push(res)
+                };
+                if let Some(res) = second {
+                    acc.push(res)
+                };
+                acc
+            },
+        ),
+    )
+    .flatten()
+    .collect::<Vec<_>>()
 }
 
 #[cfg(test)]
