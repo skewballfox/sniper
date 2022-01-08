@@ -1,3 +1,4 @@
+use futures::future::BoxFuture;
 use iter::empty;
 
 use dashmap::{iter::Iter, DashMap, ReadOnlyView};
@@ -117,13 +118,14 @@ impl SnippetManager {
     //use iterator to handle both managers at once?
     //pub fn increment(&self, )
 
-    pub fn fire<S>(&self, language: S, snippet_name: S) -> impl Iterator<Item = SnippetComponent>
-    where
-        S: Into<String>,
-    {
+    pub fn fire<F: Send + Sync + Fn() -> u32>(
+        &self,
+        language: String,
+        snippet_name: String,
+    ) -> BoxFuture<'_, ()> {
         let ammo = (*self.snippets).clone().into_read_only();
         //clone().into_read_only();
-        chamber(language, snippet_name, ammo)
+        async move { chamber(language, snippet_name, ammo) }.boxed()
     }
 }
 
