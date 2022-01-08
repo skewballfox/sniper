@@ -7,21 +7,17 @@ use rayon::{
     iter::{IntoParallelIterator, ParallelIterator},
     vec,
 };
-use regex::Regex;
+
 //use sniper_common::service::SnippetInfo;
 
 use crate::{
+    parser::Token,
     snippet::{Loader, Snippet, SnippetSet},
     target::TargetData,
     util::sniper_proto::{SnippetComponent, SnippetInfo},
 };
 
-use std::{
-    borrow::Cow,
-    collections::VecDeque,
-    iter,
-    sync::{Arc, Mutex},
-};
+use std::{borrow::Cow, iter, sync::Arc};
 
 #[derive(Debug, Clone)]
 pub struct SnippetManager {
@@ -141,14 +137,21 @@ where
 {
     let snippet_key = &(language.into(), snippet_name.into());
 
-    match ammo.get(snippet_key) {
-        Some(snippet) => {
-            snippet.body.into_iter().for_each(|line|{}
-
-            )
-            iter::empty::<SnippetComponent>()
-        },
-        None => iter::empty::<SnippetComponent>(),
+    if let Some(snippet) = ammo.get(snippet_key) {
+        let content = Cow::from(snippet.body.clone());
+        for i in 0..content.len() {
+            crate::parser::snippet_component(&content[i].clone())
+                .into_iter()
+                .for_each(|token: Token| match token {
+                    Token::Tabstop(_, _) => todo!(),
+                    Token::Text(_) => todo!(),
+                    Token::Variable(_, _) => todo!(),
+                    Token::Snippet(_) => todo!(),
+                });
+        }
+        iter::empty::<SnippetComponent>()
+    } else {
+        iter::empty::<SnippetComponent>()
     }
 }
 mod parser;
