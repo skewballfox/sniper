@@ -14,7 +14,7 @@ client=["tokio/net","tokio-util"]
 futures = "0.3.14"
 anyhow = "1.0.40"
 tarpc = {version="0.26.2", features = ["tokio1","serde-transport"] }
-tokio = {version="1.5.0",features=["macros","rt-multi-thread"]}#NOTE: more features may be added (as required)
+tokio = {version="1.8.4",features=["macros","rt-multi-thread"]}#NOTE: more features may be added (as required)
 tokio-util={version="0.6.6",features=["codec"],optional=true}
 tokio-serde={version="0.8",features=["bincode"]}
 #dashmap = {version="4.0.2", features=["serde","rayon"]}

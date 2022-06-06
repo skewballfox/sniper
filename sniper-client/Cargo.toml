@@ -15,7 +15,7 @@ futures = "0.3.14"
 anyhow = "1.0"
 serde_json = "1"
 tarpc = {version="0.26.2", features = ["tokio1","serde-transport"] }
-tokio = {version="1.5.0",features=["net","macros","rt-multi-thread"]}#NOTE: more features may be added (as required)
+tokio = {version="1.8.4",features=["net","macros","rt-multi-thread"]}#NOTE: more features may be added (as required)
 tokio-serde={version="0.8",features=["json"]}
 tokio-util={version="0.6.6",features=["codec"]}
 qp-trie={version="0.7.6"}
