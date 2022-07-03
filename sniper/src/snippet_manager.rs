@@ -1,4 +1,4 @@
-use futures::future::BoxFuture;
+use futures::{future::BoxFuture, FutureExt};
 use iter::empty;
 
 use dashmap::{iter::Iter, DashMap, ReadOnlyView};
@@ -37,7 +37,8 @@ impl SnippetManager {
         }
     }
 
-    pub fn load(
+    ///Once the client has requested a set of snippets this function adds the set of snippets into the manager
+    pub(crate) fn load(
         &mut self,
         language: &str,
         snip_set_name: &str,
@@ -118,11 +119,13 @@ impl SnippetManager {
     //use iterator to handle both managers at once?
     //pub fn increment(&self, )
 
-    pub fn fire<F: Send + Sync + Fn() -> u32>(
+    pub(crate) fn fire<F: Send + Sync + Fn() -> u32>(
         &self,
         language: String,
         snippet_name: String,
-    ) -> BoxFuture<'_, ()> {
+    ) -> std::pin::Pin<
+        Box<dyn futures::Future<Output = impl Iterator<Item = SnippetComponent>> + Send>,
+    > {
         let ammo = (*self.snippets).clone().into_read_only();
         //clone().into_read_only();
         async move { chamber(language, snippet_name, ammo) }.boxed()
