@@ -7,8 +7,11 @@ service Sniper {
   rpc DropTarget(TargetRequest) returns (Void);
 
   rpc GetCompletions(CompletionsRequest) returns (CompletionsResponse);
-  rpc GetCompletionsStream(stream CompletionsRequest)
-      returns (stream CompletionsResponse);
+  
+  // I know removing things from a proto is a big nono, but no one should be using this right now anyway
+  // and I can't fix this until I get GetSnippet working 
+  //rpc GetCompletionsStream(stream CompletionsRequest)
+  //    returns (stream CompletionsResponse);
 
   rpc GetSnippet(SnippetRequest) returns (stream SnippetResponse);
 }

@@ -19,7 +19,7 @@ use crate::util::sniper_proto::{
     sniper_server::Sniper as SniperService, CompletionsRequest, CompletionsResponse, SnippetInfo,
     TargetRequest, Void,
 };
-
+pub type SniperResult<T> = Result<Response<T>, Status>;
 #[derive(Clone)]
 pub(crate) struct Sniper {
     pub(crate) config: Arc<SniperConfig>,
@@ -136,6 +136,7 @@ impl SniperService for Sniper {
         Ok(Response::new(Void {}))
     }
 
+    ///given the current input text, return a list of relevant completions
     async fn get_completions(
         &self,
         request: Request<CompletionsRequest>,
@@ -160,7 +161,8 @@ impl SniperService for Sniper {
         Ok(Response::new(CompletionsResponse { completions }))
     }
 
-    async fn get_completions_stream(
+    // only removing this temporarily, will reimplement once the project compiles with get_snippet
+    /*async fn get_completions_stream(
         &self,
         req: Request<Streaming<CompletionsRequest>>,
     ) -> Result<Response<Stream<CompletionsResponse>>, Status> {
@@ -200,13 +202,23 @@ impl SniperService for Sniper {
                 Box::pin(stream) as Stream<CompletionsResponse>
             ));
         }
-    }
+    }*/
+
+    type GetSnippetStream = std::pin::Pin<
+        Box<
+            dyn futures::Stream<Item = std::result::Result<SnippetResponse, Status>>
+                + Send
+                + 'static,
+        >,
+    >;
+
+    //type GetCompletionsStreamStream = Response<Stream<CompletionsResponse>>;
 
     ///gets and builds a snippet via Bidirectional Streaming
     async fn get_snippet(
         &self,
         request: Request<SnippetRequest>,
-    ) -> Result<Response<Stream<SnippetResponse>>, Status> {
+    ) -> SniperResult<Self::GetSnippetStream> {
         let SnippetRequest {
             session_id,
             uri,
@@ -230,8 +242,4 @@ impl SniperService for Sniper {
 
         Ok(Response::new(Box::pin(stream) as Stream<SnippetResponse>))
     }
-
-    type GetCompletionsStreamStream = Response<Stream<CompletionsResponse>>;
-
-    type GetSnippetStream = Response<Stream<SnippetResponse>>;
 }

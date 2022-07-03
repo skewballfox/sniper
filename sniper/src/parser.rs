@@ -15,11 +15,41 @@ use nom::{
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Token {
+    ///a tabstop, the Option<vec<Token>> is a vector of default values
     Tabstop(u32, Option<Vec<Token>>),
+    ///aka "kitchen sink" Token, captures the unmanipulated raw text
     Text(String),
+    ///snippet variables which warrant actions, the second optional field is for transforms
     Variable(String, Option<String>),
+    ///basically the name of another snippet, to be recursively parse
     Snippet(String), //,Option<Vec<String>>),
 }
+
+//This will call text followed by non_text in a cycle, until the end of the stream
+///Top level function for the parser, probably the only one you want to use unless extending the
+/// parser itself
+/// this takes a snippet string and returns a vector of Tokens
+pub fn snippet_component(snippet_string: &str) -> Vec<Token> {
+    iterator(
+        snippet_string,
+        fold_many1(
+            pair(opt(text), opt(non_text_token)),
+            Vec::new,
+            |mut acc: Vec<_>, (first, second)| {
+                if let Some(res) = first {
+                    acc.push(res)
+                };
+                if let Some(res) = second {
+                    acc.push(res)
+                };
+                acc
+            },
+        ),
+    )
+    .flatten()
+    .collect::<Vec<_>>()
+}
+
 fn sp<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
     let chars = " \t\r\n";
 
@@ -154,28 +184,6 @@ fn snippet_name(snippet_string: &str) -> IResult<&str, Token> {
 ///placeholder for function which will handle nested snippet=s with optional arguments
 fn snippet_object(snippet_string: &str) -> IResult<&str, Token> {
     snippet_name(snippet_string)
-}
-
-//This will call text followed by non_text in a cycle, until the end of the stream
-pub fn snippet_component(snippet_string: &str) -> Vec<Token> {
-    iterator(
-        snippet_string,
-        fold_many1(
-            pair(opt(text), opt(non_text_token)),
-            Vec::new,
-            |mut acc: Vec<_>, (first, second)| {
-                if let Some(res) = first {
-                    acc.push(res)
-                };
-                if let Some(res) = second {
-                    acc.push(res)
-                };
-                acc
-            },
-        ),
-    )
-    .flatten()
-    .collect::<Vec<_>>()
 }
 
 #[cfg(test)]

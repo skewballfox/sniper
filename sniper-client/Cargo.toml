@@ -10,7 +10,7 @@ edition = "2021"
 
 
 [dependencies]
-sniper-common={path="../sniper-common",features=["client"]}
+#sniper-common={path="../sniper-common",features=["client"]}
 futures = "0.3.14"
 anyhow = "1.0"
 serde_json = "1"
@@ -18,7 +18,7 @@ tarpc = {version="0.26.2", features = ["tokio1","serde-transport"] }
 tokio = {version="1.5.0",features=["net","macros","rt-multi-thread"]}#NOTE: more features may be added (as required)
 tokio-serde={version="0.8",features=["json"]}
 tokio-util={version="0.6.6",features=["codec"]}
-qp-trie={version="0.7.6"}
+qp-trie={version="0.8.0"}
 #dashmap = {version="4.0.2", features=["serde","rayon"]}
 #rayon = {version="1.5"}
 #serde-tuple-vec-map={version="1.0.0"}
@@ -26,7 +26,7 @@ qp-trie={version="0.7.6"}
 #lazy_static= "1.4.0"
 serde = {version="1.0.115", features=["derive"]}
 tracing = { version = "0.1" }
-tracing-opentelemetry = "0.12"
+tracing-opentelemetry = "0.17.3"
 opentelemetry = { version = "0.13", features = ["rt-tokio"] }
 opentelemetry-jaeger = { version = "0.12", features = ["tokio"] }
-tracing-subscriber = "0.2"
+tracing-subscriber = "0.3.11"

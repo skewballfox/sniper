@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     tokio::fs::create_dir_all(Path::new(path).parent().unwrap()).await?;
     //initialize jaeger tracing
-    util::init_tracing("Sniper Server").expect("failed to initialize tracing");
+    //util::init_tracing("Sniper Server").expect("failed to initialize tracing");
     //create a lister on the specified socket
     let listener = UnixListener::bind("/tmp/sniper.socket").unwrap();
 
