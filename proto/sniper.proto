@@ -13,7 +13,7 @@ service Sniper {
   //rpc GetCompletionsStream(stream CompletionsRequest)
   //    returns (stream CompletionsResponse);
 
-  rpc GetSnippet(SnippetRequest) returns (stream SnippetResponse);
+  rpc GetSnippet(SnippetRequest) returns (stream SnippetComponent);
 }
 
 message SnippetInfo {
@@ -39,7 +39,10 @@ message Tabstop {
 // 2. avoid hardcoding support for a set of variables
 // A functor is a thing which may take arguments transforms each step(keystroke)
 // until devolving to regular text
-message Functor { optional string text = 1; }
+message Functor {
+  string name = 1; 
+  optional string transform = 2; 
+}
 
 message CompletionsRequest {
   string session_id = 1;
@@ -63,6 +66,6 @@ message SnippetRequest {
   string snippet_name = 3;
 }
 
-message SnippetResponse { SnippetComponent snippet_components = 1; }
+
 // TODO
 // message FunctorRequest {}

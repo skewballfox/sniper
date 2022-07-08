@@ -1,4 +1,5 @@
-use futures::{future::BoxFuture, FutureExt};
+use async_stream::stream;
+
 use iter::empty;
 
 use dashmap::{iter::Iter, DashMap, ReadOnlyView};
@@ -8,6 +9,7 @@ use rayon::{
     iter::{IntoParallelIterator, ParallelIterator},
     vec,
 };
+use tokio::sync::mpsc::Sender;
 
 //use sniper_common::service::SnippetInfo;
 
@@ -15,10 +17,12 @@ use crate::{
     parser::Token,
     snippet::{Loader, Snippet, SnippetSet},
     target::TargetData,
-    util::sniper_proto::{SnippetComponent, SnippetInfo},
+    util::sniper_proto::{
+        snippet_component::Component, Functor, SnippetComponent, SnippetInfo, Tabstop,
+    },
 };
 
-use std::{borrow::Cow, iter, sync::Arc};
+use std::{borrow::Cow, collections::VecDeque, iter, pin::Pin, sync::Arc};
 
 #[derive(Debug, Clone)]
 pub struct SnippetManager {
@@ -123,40 +127,93 @@ impl SnippetManager {
         &self,
         language: String,
         snippet_name: String,
-    ) -> std::pin::Pin<
-        Box<dyn futures::Future<Output = impl Iterator<Item = SnippetComponent>> + Send>,
-    > {
+        tx: Sender<SnippetComponent>,
+    ) {
         let ammo = (*self.snippets).clone().into_read_only();
-        //clone().into_read_only();
-        async move { chamber(language, snippet_name, ammo) }.boxed()
+        discharge(language, snippet_name, ammo, tx);
+        tx.closed();
     }
 }
 
-fn chamber<S>(
-    language: S,
-    snippet_name: S,
+fn discharge(
+    language: String,
+    snippet_name: String,
     ammo: ReadOnlyView<(String, String), Snippet>,
-) -> impl Iterator<Item = SnippetComponent>
-where
-    S: Into<String>,
-{
+    tx: Sender<SnippetComponent>,
+) {
     let snippet_key = &(language.into(), snippet_name.into());
-
+    let mut tokens: Vec<Token> = Vec::new();
     if let Some(snippet) = ammo.get(snippet_key) {
         let content = Cow::from(snippet.body.clone());
         for i in 0..content.len() {
-            crate::parser::snippet_component(&content[i].clone())
-                .into_iter()
-                .for_each(|token: Token| match token {
-                    Token::Tabstop(_, _) => todo!(),
-                    Token::Text(_) => todo!(),
-                    Token::Variable(_, _) => todo!(),
-                    Token::Snippet(_) => todo!(),
-                });
+            tokens.append(&mut crate::parser::snippet_component(&content[i]));
         }
-        iter::empty::<SnippetComponent>()
     } else {
-        iter::empty::<SnippetComponent>()
+        tx.closed();
+        return;
+    }
+
+    for token in tokens {
+        if let Some(snip_name) = strike(token, tx) {
+            discharge(language, snip_name, ammo, tx)
+        }
     }
 }
-mod parser;
+
+fn strike(token: Token, tx: Sender<SnippetComponent>) -> Option<String> {
+    match _chamber(token) {
+        ChamberType::ReadyComponent(comp) => {
+            tx.blocking_send(SnippetComponent {
+                component: Some(comp),
+            });
+        }
+        ChamberType::Tab(tab_number, placeholders) => {
+            let mut content = Vec::<SnippetComponent>::new();
+            for placeholder in placeholders {
+                let ph = _chamber(placeholder);
+                //TODO: incomplete, come back and finish logic for tabstops
+                if let ChamberType::ReadyComponent(ph) = ph {
+                    content.push(SnippetComponent {
+                        component: Some(ph),
+                    });
+                };
+            }
+            tx.blocking_send(SnippetComponent {
+                component: Some(Component::Tabstop(Tabstop {
+                    number: tab_number as i32,
+                    content: content,
+                })),
+            });
+        }
+        ChamberType::Snippet(snip_name) => return Some(snip_name),
+    };
+    None
+}
+enum ChamberType {
+    ReadyComponent(Component),
+    Tab(u32, Vec<Token>),
+    Snippet(String),
+}
+fn _chamber(token: Token) -> ChamberType {
+    match token {
+        Token::TabstopToken(tab_number, optional_placeholders) => {
+            if let Some(placeholders) = optional_placeholders {
+                ChamberType::Tab(tab_number, placeholders)
+            } else {
+                ChamberType::ReadyComponent(Component::Tabstop(Tabstop {
+                    number: tab_number as i32,
+                    content: Vec::new(),
+                }))
+            }
+        }
+        Token::TextToken(txt) => ChamberType::ReadyComponent(Component::Text(txt)),
+
+        Token::VariableToken(name, transform) => {
+            ChamberType::ReadyComponent(Component::Var(Functor {
+                name: name,
+                transform: transform,
+            }))
+        }
+        Token::SnippetToken(sub_snippet_name) => ChamberType::Snippet(sub_snippet_name),
+    }
+}
