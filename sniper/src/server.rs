@@ -1,17 +1,20 @@
 use async_stream::try_stream;
 use dashmap::DashMap;
+
 use futures::lock::Mutex;
 use futures_util::{stream, StreamExt, TryStreamExt};
 use std::sync::Arc;
+use tokio::sync::mpsc::{self, Receiver, Sender};
+use tokio_stream::wrappers::ReceiverStream;
 
 use prost::{self, Message};
 use qp_trie::Trie;
 //use sniper_common::service::{SniperService, SnippetInfo};
 
 use tokio::sync::RwLock;
-use tonic::{codegen::futures_core, Request, Response, Status, Streaming};
+use tonic::{Request, Response, Status, Streaming};
 
-use crate::util::sniper_proto::{SnippetRequest, SnippetResponse};
+use crate::util::sniper_proto::{SnippetComponent, SnippetRequest};
 use crate::util::Stream;
 use crate::{config::SniperConfig, snippet_manager::SnippetManager, target::TargetData};
 
@@ -204,13 +207,7 @@ impl SniperService for Sniper {
         }
     }*/
 
-    type GetSnippetStream = std::pin::Pin<
-        Box<
-            dyn futures::Stream<Item = std::result::Result<SnippetResponse, Status>>
-                + Send
-                + 'static,
-        >,
-    >;
+    type GetSnippetStream = ReceiverStream<Result<SnippetComponent, Status>>;
 
     //type GetCompletionsStreamStream = Response<Stream<CompletionsResponse>>;
 
@@ -218,13 +215,14 @@ impl SniperService for Sniper {
     async fn get_snippet(
         &self,
         request: Request<SnippetRequest>,
-    ) -> SniperResult<Self::GetSnippetStream> {
+    ) -> SniperResult<ReceiverStream<SnippetComponent>> {
         let SnippetRequest {
             session_id,
             uri,
             snippet_name,
         } = request.into_inner();
 
+        let (mut tx, rx) = mpsc::channel(64);
         let language = self
             .targets
             .get(&(session_id.to_string(), uri.to_string()))
@@ -234,12 +232,10 @@ impl SniperService for Sniper {
 
         let snippet_manager = self.snippet_manager.clone();
 
-        let stream = try_stream! {
-            for component in snippet_manager.fire(language,snippet_name) {
-                yield component;
-            }
-        };
+        tokio::spawn(async move {
+            &snippet_manager.fire(language, snippet_name, tx);
+        });
 
-        Ok(Response::new(Box::pin(stream) as Stream<SnippetResponse>))
+        Ok(Response::new(ReceiverStream::new(rx)))
     }
 }
