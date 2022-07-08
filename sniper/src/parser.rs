@@ -1,7 +1,3 @@
-use std::borrow::Cow;
-use std::collections::VecDeque;
-use std::str::FromStr;
-
 use nom::{
     self,
     branch::alt,
@@ -11,7 +7,7 @@ use nom::{
     error::ParseError,
     multi::{fold_many1, many_till, separated_list1},
     sequence::{delimited, pair, preceded},
-    IResult, Parser,
+    IResult,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -30,7 +26,7 @@ pub(crate) enum Token {
 ///Top level function for the parser, probably the only one you want to use unless extending the
 /// parser itself
 /// this takes a snippet string and returns a vector of Tokens
-pub fn snippet_component(snippet_string: &str) -> Vec<Token> {
+pub(crate) fn snippet_component(snippet_string: &str) -> Vec<Token> {
     iterator(
         snippet_string,
         fold_many1(
