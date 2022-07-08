@@ -1,8 +1,6 @@
 use async_stream::try_stream;
 use dashmap::DashMap;
 
-use futures::lock::Mutex;
-use futures_util::{stream, StreamExt, TryStreamExt};
 use std::sync::Arc;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 use tokio_stream::wrappers::ReceiverStream;
@@ -22,7 +20,7 @@ use crate::util::sniper_proto::{
     sniper_server::Sniper as SniperService, CompletionsRequest, CompletionsResponse, SnippetInfo,
     TargetRequest, Void,
 };
-pub type SniperResult<T> = Result<Response<T>, Status>;
+pub type SniperResponse<T> = Result<Response<T>, Status>;
 #[derive(Clone)]
 pub(crate) struct Sniper {
     pub(crate) config: Arc<SniperConfig>,
@@ -211,11 +209,11 @@ impl SniperService for Sniper {
 
     //type GetCompletionsStreamStream = Response<Stream<CompletionsResponse>>;
 
-    ///gets and builds a snippet via Bidirectional Streaming
+    ///gets and builds a snippet one piece at a time
     async fn get_snippet(
         &self,
         request: Request<SnippetRequest>,
-    ) -> SniperResult<ReceiverStream<SnippetComponent>> {
+    ) -> SniperResponse<Self::GetSnippetStream> {
         let SnippetRequest {
             session_id,
             uri,
@@ -233,7 +231,7 @@ impl SniperService for Sniper {
         let snippet_manager = self.snippet_manager.clone();
 
         tokio::spawn(async move {
-            &snippet_manager.fire(language, snippet_name, tx);
+            snippet_manager.fire(language, snippet_name, tx);
         });
 
         Ok(Response::new(ReceiverStream::new(rx)))

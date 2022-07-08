@@ -10,6 +10,7 @@ use rayon::{
     vec,
 };
 use tokio::sync::mpsc::Sender;
+use tonic::Status;
 
 //use sniper_common::service::SnippetInfo;
 
@@ -123,23 +124,23 @@ impl SnippetManager {
     //use iterator to handle both managers at once?
     //pub fn increment(&self, )
 
-    pub(crate) fn fire<F: Send + Sync + Fn() -> u32>(
+    pub(crate) fn fire(
         &self,
         language: String,
         snippet_name: String,
-        tx: Sender<SnippetComponent>,
+        tx: Sender<Result<SnippetComponent, Status>>,
     ) {
         let ammo = (*self.snippets).clone().into_read_only();
-        discharge(language, snippet_name, ammo, tx);
+        discharge(&language, snippet_name, ammo, &tx);
         tx.closed();
     }
 }
 
 fn discharge(
-    language: String,
+    language: &String,
     snippet_name: String,
     ammo: ReadOnlyView<(String, String), Snippet>,
-    tx: Sender<SnippetComponent>,
+    tx: &Sender<Result<SnippetComponent, Status>>,
 ) {
     let snippet_key = &(language.into(), snippet_name.into());
     let mut tokens: Vec<Token> = Vec::new();
@@ -155,17 +156,17 @@ fn discharge(
 
     for token in tokens {
         if let Some(snip_name) = strike(token, tx) {
-            discharge(language, snip_name, ammo, tx)
+            discharge(language, snip_name, ammo.clone(), tx)
         }
     }
 }
 
-fn strike(token: Token, tx: Sender<SnippetComponent>) -> Option<String> {
+fn strike(token: Token, tx: &Sender<Result<SnippetComponent, Status>>) -> Option<String> {
     match _chamber(token) {
         ChamberType::ReadyComponent(comp) => {
-            tx.blocking_send(SnippetComponent {
+            tx.blocking_send(Ok(SnippetComponent {
                 component: Some(comp),
-            });
+            }));
         }
         ChamberType::Tab(tab_number, placeholders) => {
             let mut content = Vec::<SnippetComponent>::new();
@@ -178,12 +179,12 @@ fn strike(token: Token, tx: Sender<SnippetComponent>) -> Option<String> {
                     });
                 };
             }
-            tx.blocking_send(SnippetComponent {
+            tx.blocking_send(Ok(SnippetComponent {
                 component: Some(Component::Tabstop(Tabstop {
                     number: tab_number as i32,
-                    content: content,
+                    content,
                 })),
-            });
+            }));
         }
         ChamberType::Snippet(snip_name) => return Some(snip_name),
     };
