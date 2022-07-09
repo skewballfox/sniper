@@ -13,13 +13,10 @@ name="sniper"
 path="src/main.rs"
 
 [dependencies]
-#sniper-common={path="../sniper-common"}
 anyhow = "1.0"
 async-stream = "0.3"
 futures = "0.3.14"
 serde_json = "1"
-ringbuf = "0.2.8"
-#tarpc = {version="0.26.2", features = ["tokio1","serde-transport"] }
 tokio = {version="1.5.0",features=["net","fs","macros","rt-multi-thread"]}#NOTE: more features may be added (as required)
 tokio-serde={version="0.8",features=["bincode"]}
 tokio-util={version="0.7.3",features=["codec"]}
@@ -34,10 +31,7 @@ serde = {version="1.0.115", features=["derive"]}
 serde_bytes={version="0.11.5"}
 toml = {version="0.5", features = ["preserve_order"]}#NOTE: still used for config
 directories = "^4.0.1"
-daemonize = "0.4.1"
 libc = "0.2.71"
-whoami = "^1.2"
-#umask="1.0.0"
 nom="^7.1"
 tonic="0.7.2"
 prost = "0.10.4"
