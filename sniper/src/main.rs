@@ -31,14 +31,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let path = "/tmp/sniper.socket";
     //free the socket created by old instances
     let _ = tokio::fs::remove_file(path);
-
+    //create the path to the file if it doesn't exist
     tokio::fs::create_dir_all(Path::new(path).parent().unwrap()).await?;
+    //create a lister on the specified socket
+    let listener = UnixListener::bind(path).unwrap();
+
     //initialize jaeger tracing
     util::init_tracing("Sniper Server").expect("failed to initialize tracing");
-    //create a lister on the specified socket
-    let listener = UnixListener::bind("/tmp/sniper.socket").unwrap();
 
-    let _codec_builder = LengthDelimitedCodec::builder();
     //will probably become more important later, right now just handles pathing
     let config = Arc::new(SniperConfig::new());
     //the individuals files, or editor sessions using sniper(still trying to figure out which)
