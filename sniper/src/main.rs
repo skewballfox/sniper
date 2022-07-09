@@ -38,7 +38,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     //create a lister on the specified socket
     let listener = UnixListener::bind("/tmp/sniper.socket").unwrap();
 
-    let codec_builder = LengthDelimitedCodec::builder();
+    let _codec_builder = LengthDelimitedCodec::builder();
 
     let config = Arc::new(SniperConfig::new());
     let targets = Arc::new(DashMap::new());
@@ -48,7 +48,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let sniper = Sniper::new(config.clone(), targets.clone(), snippet_manager.clone());
     //loop {
-    let (stream, _addr) = listener.accept().await.unwrap();
+    let (_stream, _addr) = listener.accept().await.unwrap();
     /*let framed_stream = codec_builder.new_framed(stream);
     let transport = serde_transport::new(framed_stream, Bincode::default());
 

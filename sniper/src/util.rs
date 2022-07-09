@@ -1,6 +1,6 @@
 pub use opentelemetry::global::shutdown_tracer_provider;
 use tonic::{codegen::futures_core, Status};
-use tracing_subscriber::{fmt::format::FmtSpan, prelude::*};
+
 
 pub mod sniper_proto {
     tonic::include_proto!("sniper");

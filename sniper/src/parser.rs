@@ -5,7 +5,7 @@ use nom::{
     character::streaming::{alphanumeric1, char, digit1},
     combinator::{iterator, map, map_res, opt},
     error::ParseError,
-    multi::{fold_many1, many_till, separated_list1},
+    multi::{fold_many1, separated_list1},
     sequence::{delimited, pair, preceded},
     IResult,
 };
