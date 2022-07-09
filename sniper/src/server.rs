@@ -1,19 +1,13 @@
-use async_stream::try_stream;
 use dashmap::DashMap;
 
 use std::sync::Arc;
-use tokio::sync::mpsc::{self, Receiver, Sender};
+use tokio::sync::mpsc::{self};
 use tokio_stream::wrappers::ReceiverStream;
 
-use prost::{self, Message};
-use qp_trie::Trie;
-//use sniper_common::service::{SniperService, SnippetInfo};
-
-use tokio::sync::RwLock;
-use tonic::{Request, Response, Status, Streaming};
+use tonic::{Request, Response, Status};
 
 use crate::util::sniper_proto::{SnippetComponent, SnippetRequest};
-use crate::util::Stream;
+
 use crate::{config::SniperConfig, snippet_manager::SnippetManager, target::TargetData};
 
 use crate::util::sniper_proto::{
@@ -93,7 +87,7 @@ impl SniperService for Sniper {
                     }
                 });
 
-            &self
+            let _ = &self
                 .targets
                 .insert((session_id.into(), uri.into()), target_data);
             //should only track a target if it is in a supported language
@@ -149,7 +143,7 @@ impl SniperService for Sniper {
         } = request.into_inner();
         println!("{:?}", String::from_utf8(keyboard_input.clone()));
         let target_key = (session_id, uri);
-        let snippet_manager = self.snippet_manager.clone();
+        let _snippet_manager = self.snippet_manager.clone();
         let completions: Vec<SnippetInfo> = match Arc::clone(&self.targets).entry(target_key) {
             dashmap::mapref::entry::Entry::Occupied(ref target) => target
                 .get()
@@ -220,7 +214,7 @@ impl SniperService for Sniper {
             snippet_name,
         } = request.into_inner();
 
-        let (mut tx, rx) = mpsc::channel(64);
+        let (tx, rx) = mpsc::channel(64);
         let language = self
             .targets
             .get(&(session_id.to_string(), uri.to_string()))

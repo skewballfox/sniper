@@ -41,7 +41,7 @@ impl SniperConfig {
         println!("{:?}", toml_file);
         println!("config file loaded: {:?}", toml_file);
         let toml_data = fs::read_to_string(&toml_file).expect("failed to load file");
-        let mut temp: Loader = toml::from_str(&toml_data).unwrap();
+        let temp: Loader = toml::from_str(&toml_data).unwrap();
 
         Self {
             config_path: PathBuf::from(path),
