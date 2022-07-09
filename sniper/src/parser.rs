@@ -31,7 +31,7 @@ pub(crate) enum Token {
 }
 
 //This will call text followed by non_text in a cycle, until the end of the stream
-///Top level function for the parser, probably the only one you want to use unless extending the
+/// Top level function for the parser, probably the only one you want to use unless extending the
 /// parser itself
 /// this takes a snippet string and returns a vector of Tokens
 pub(crate) fn snippet_component(snippet_string: &str) -> Vec<Token> {
