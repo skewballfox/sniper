@@ -1,3 +1,12 @@
+/*
+    This is responsible for two things:
+        1. handling configuration,
+        2. handling anything related to file pathing
+
+    if something is borked with configuring sniper or loading
+    the available snippets into sniper, this is probably the place
+    to check
+*/
 use directories::BaseDirs;
 use serde::Deserialize;
 use std::fs;
@@ -41,7 +50,7 @@ impl SniperConfig {
         println!("{:?}", toml_file);
         println!("config file loaded: {:?}", toml_file);
         let toml_data = fs::read_to_string(&toml_file).expect("failed to load file");
-        let mut temp: Loader = toml::from_str(&toml_data).unwrap();
+        let temp: Loader = toml::from_str(&toml_data).unwrap();
 
         Self {
             config_path: PathBuf::from(path),

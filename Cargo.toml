@@ -1,8 +1,7 @@
 [workspace]
 members=[
-    "sniper-common",
     "sniper",
-    "sniper-client",
+    #"sniper-client",
     ]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

@@ -1,15 +1,21 @@
-use std::{collections::HashSet, sync::Arc};
+/*
+   This is the structs representing the files/editors being tracked and what
+   we need to know about them if we don't want to just store the snippets in
+   memory for perpetuity.
 
+   Each Target is associated with a set of snippets, a language (or maybe a
+   set of languages) and
+*/
+
+use crate::util::sniper_proto::SnippetInfo;
 use dashmap::DashSet;
 use qp_trie::Trie;
-use sniper_common::service::SnippetInfo;
-use tokio::sync::RwLock;
 
 //use std::hash::{Hash,Hasher};
 //NOTE: may not be necessary, may wind up getting rid of this
 /*
 #[derive(Debug)]
-pub struct TargetSession {
+pub struct TargetManager {
     editor_session_id: String,
     targets: HashMap<String,Target>,
 }*/
