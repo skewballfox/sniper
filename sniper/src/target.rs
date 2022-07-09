@@ -1,4 +1,11 @@
+/*
+   This is the structs representing the files/editors being tracked and what
+   we need to know about them if we don't want to just store the snippets in
+   memory for perpetuity.
 
+   Each Target is associated with a set of snippets, a language (or maybe a
+   set of languages) and
+*/
 
 use crate::util::sniper_proto::SnippetInfo;
 use dashmap::DashSet;

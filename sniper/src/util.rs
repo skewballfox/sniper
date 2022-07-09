@@ -1,15 +1,16 @@
+/*
+   Sort of the kitchen sink for stuff that doesn't have a home elsewhere, though
+   may expand a bit to be primarily for things like logging, tracing, and hooks
+   for generated code
+*/
 pub use opentelemetry::global::shutdown_tracer_provider;
-use tonic::{codegen::futures_core, Status};
 
-
+//this goes here so that the structs for the messages are accessible to all
+//the modules, without importing them from the server module
 pub mod sniper_proto {
     tonic::include_proto!("sniper");
 }
 
-pub(crate) type Stream<T> =
-    std::pin::Pin<Box<dyn futures_core::Stream<Item = std::result::Result<T, Status>> + Send>>;
-// This is only temporary so that the elephant is edible
-/*
 /// Initializes an OpenTelemetry tracing subscriber with a Jaeger backend.
 pub fn init_tracing(service_name: &str) -> anyhow::Result<()> {
     println!("initializing tracer");
@@ -36,7 +37,7 @@ pub fn init_tracing(service_name: &str) -> anyhow::Result<()> {
     println!("tracer registered");
     Ok(())
 }
-*/
+
 //TODO: remove after merge of related PR
 //https://github.com/hyperium/tonic/pull/861
 #[cfg(unix)]

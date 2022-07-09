@@ -1,3 +1,11 @@
+/*
+   Used during get_snippet request. This handles the logic for parsing the
+   bodies of the snippets and turning them into a string of tokens, which
+   are then converted into components
+
+   Note: I plan on refactoring this process so that the parser creates components
+   Directly, should cut down on the processing time for get_snippet request
+*/
 use nom::{
     self,
     branch::alt,

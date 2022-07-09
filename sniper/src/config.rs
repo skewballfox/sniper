@@ -1,3 +1,12 @@
+/*
+    This is responsible for two things:
+        1. handling configuration,
+        2. handling anything related to file pathing
+
+    if something is borked with configuring sniper or loading
+    the available snippets into sniper, this is probably the place
+    to check
+*/
 use directories::BaseDirs;
 use serde::Deserialize;
 use std::fs;
