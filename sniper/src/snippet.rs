@@ -1,3 +1,9 @@
+/*
+    Structs for storing, representing, and deserializing the snippets currently
+    available and ready to use by the server and its clients, most of the fields
+    are allowed to be missing during deserialization so that the base syntax is
+    compatible with existing vscode snippets
+*/
 use serde::{Deserialize, Serialize};
 //these are the currently (planned) supported actions for snippets
 #[derive(Deserialize, Clone, Debug)]
@@ -95,10 +101,4 @@ impl SnippetSet {
             true
         }
     }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct SnippetInfo {
-    pub name: String,
-    pub description: String,
 }

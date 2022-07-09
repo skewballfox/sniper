@@ -34,30 +34,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     tokio::fs::create_dir_all(Path::new(path).parent().unwrap()).await?;
     //initialize jaeger tracing
-    //util::init_tracing("Sniper Server").expect("failed to initialize tracing");
+    util::init_tracing("Sniper Server").expect("failed to initialize tracing");
     //create a lister on the specified socket
     let listener = UnixListener::bind("/tmp/sniper.socket").unwrap();
 
     let _codec_builder = LengthDelimitedCodec::builder();
-
+    //will probably become more important later, right now just handles pathing
     let config = Arc::new(SniperConfig::new());
+    //the individuals files, or editor sessions using sniper(still trying to figure out which)
     let targets = Arc::new(DashMap::new());
+    //the snippets, it's all about the snippets
     let snippets = Arc::new(DashMap::new());
+    // the set of snippets currently being used, along with the number of targets using them
     let snippet_sets = Arc::new(DashMap::new());
     let snippet_manager = SnippetManager::new(snippets.clone(), snippet_sets.clone());
 
     let sniper = Sniper::new(config.clone(), targets.clone(), snippet_manager.clone());
-    //loop {
-    let (_stream, _addr) = listener.accept().await.unwrap();
-    /*let framed_stream = codec_builder.new_framed(stream);
-    let transport = serde_transport::new(framed_stream, Bincode::default());
 
-    let sniper_server = Server::new(config.clone(), targets.clone(), snippet_manager.clone());
-    let fut = server::BaseChannel::with_defaults(transport).execute(sniper_server.serve());
-    println!("request received");
-    tokio::spawn(fut);
-    */
-    //}
+    let (_stream, _addr) = listener.accept().await.unwrap();
+
     let incoming = {
         let uds = UnixListener::bind(path)?;
 

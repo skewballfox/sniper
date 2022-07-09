@@ -1,4 +1,11 @@
+/*
+   This is the implementation for all server-side responses, generally hands
+   off the necessary parameters to other structs that are handling some part
+   of the overall state
+
+*/
 use dashmap::DashMap;
+use tonic::codegen::futures_core;
 
 use std::sync::Arc;
 use tokio::sync::mpsc::{self};
@@ -14,6 +21,9 @@ use crate::util::sniper_proto::{
     sniper_server::Sniper as SniperService, CompletionsRequest, CompletionsResponse, SnippetInfo,
     TargetRequest, Void,
 };
+pub(crate) type Stream<T> =
+    std::pin::Pin<Box<dyn futures_core::Stream<Item = std::result::Result<T, Status>> + Send>>;
+
 pub type SniperResponse<T> = Result<Response<T>, Status>;
 #[derive(Clone)]
 pub(crate) struct Sniper {
@@ -68,10 +78,13 @@ impl SniperService for Sniper {
                 .base_snippets
                 .iter()
                 .for_each(|snippet_set| {
+                    //check if the base snippet set has already been loaded
                     if !snippet_manager
-                        .snippet_sets //check if the snippet set has already been loaded
+                        .snippet_sets
                         .contains_key(&(language.clone(), snippet_set.to_string()))
                     {
+                        //if the snippet set is currently untracked, load the base set of snippets
+                        //for the targets language
                         let snippet_data = self.config.get_snippet_data(&language, &snippet_set);
                         snippet_manager.load(
                             &language,
@@ -80,6 +93,8 @@ impl SniperService for Sniper {
                             &mut target_data,
                         );
                     } else {
+                        //TODO: currently triggers is handled entirely by the snippet manager
+                        // so may want to remove triggers from target_data and remove this line
                         target_data.triggers.extend(
                             snippet_manager.triggers(language.clone(), snippet_set.clone()),
                         );
@@ -110,7 +125,7 @@ impl SniperService for Sniper {
         let target_key = &(session_id.to_string(), uri.to_string());
 
         println!("dropping target: {:?}", target_key);
-
+        //make sure that the target is already being tracked
         if self.targets.contains_key(target_key) {
             //consider using drain filter in the future:
             //https://doc.rust-lang.org/std/collections/struct.HashSet.html#method.drain_filter

@@ -1,13 +1,17 @@
+/*
+   As this is a snippet server, the majority of the state is stored here.
+   handles loading and unloading snippets, getting a list of completions
+   given the current user input, and handling things like turning a request
+   into a snippet. Some pieces may be moved once things like "SnippetMode"
+   and Functors are fully implemented
 
-
-
-
+   All of the logic here is serial, primarily because it has to be. Triggers
+   are stored in a trie, and parsing the body has to happen in order and relies
+   on some recursive behavior since snippets can be composed of multiple snippets
+*/
 use dashmap::{DashMap, ReadOnlyView};
 
-//use futures::lock::Mutex;
-use rayon::{
-    iter::{ParallelIterator},
-};
+use rayon::iter::ParallelIterator;
 use tokio::sync::mpsc::Sender;
 use tonic::Status;
 
@@ -23,10 +27,16 @@ use crate::{
 };
 
 use std::{borrow::Cow, sync::Arc};
-
+///The struct that stores all state related to the snippets themselves
 #[derive(Debug, Clone)]
 pub struct SnippetManager {
+    /// The keys are (language, snippet_name), the value is the struct containing
+    /// the deserialized snippet
     pub(crate) snippets: Arc<DashMap<(String, String), Snippet>>,
+    /// The keys are (language, set_name),  the set_name should correspond
+    /// to the file name, or some way map to it elsewhere. The value is a
+    /// struct with a vector of strings corresponding to the second half
+    /// of the key for snippets
     pub(crate) snippet_sets: Arc<DashMap<(String, String), SnippetSet>>,
 }
 
