@@ -1,4 +1,10 @@
-use serde::Deserialize;
+/*
+    Structs for storing, representing, and deserializing the snippets currently
+    available and ready to use by the server and its clients, most of the fields
+    are allowed to be missing during deserialization so that the base syntax is
+    compatible with existing vscode snippets
+*/
+use serde::{Deserialize, Serialize};
 //these are the currently (planned) supported actions for snippets
 #[derive(Deserialize, Clone, Debug)]
 #[serde(tag = "action", content = "args")]
@@ -31,8 +37,10 @@ pub struct Snippet {
     is_conditional: bool,
     #[serde(default = "no_action")]
     actions: Vec<Actions>,
+    //TODO: remove once fully migrated to incremental parsing
     #[serde(default = "assembly_required")]
     pub(crate) requires_assembly: bool,
+    //TODO: remove if this turns out to not be necessary with incremental parsing
     #[serde(default = "currently_empty")]
     pub(crate) tabstops: Vec<(usize, usize, usize)>,
 }
@@ -91,38 +99,6 @@ impl SnippetSet {
             false
         } else {
             true
-        }
-    }
-}
-
-//for rebuilding snippets
-#[derive(Debug)]
-pub(crate) struct SnippetBuildMetadata {
-    pub(crate) name: String,
-    pub(crate) sub_snippet_count: usize,
-    //pub(crate)tabstops: Vec<(usize,usize,usize)>,
-    pub(crate) body: Vec<Vec<SnipComponent>>,
-}
-#[derive(Debug)]
-pub(crate) enum SnipComponent {
-    tabstop {
-        start: usize,
-        end: usize,
-    },
-    metatabstop(u32, u32),
-    sub_snippet {
-        start: usize,
-        end: usize,
-        name: String,
-    },
-}
-
-impl SnippetBuildMetadata {
-    pub(crate) fn new(name: String, sub_snip_count: usize, body: Vec<Vec<SnipComponent>>) -> Self {
-        Self {
-            name: name,
-            sub_snippet_count: sub_snip_count,
-            body: body,
         }
     }
 }

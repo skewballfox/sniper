@@ -1,30 +1,42 @@
-use iter::empty;
+/*
+   As this is a snippet server, the majority of the state is stored here.
+   handles loading and unloading snippets, getting a list of completions
+   given the current user input, and handling things like turning a request
+   into a snippet. Some pieces may be moved once things like "SnippetMode"
+   and Functors are fully implemented
 
-use dashmap::{iter::Iter, DashMap};
-use qp_trie::Trie;
-//use futures::lock::Mutex;
-use rayon::{
-    iter::{IntoParallelIterator, ParallelIterator},
-    vec,
-};
-use regex::Regex;
-use sniper_common::service::SnippetInfo;
+   All of the logic here is serial, primarily because it has to be. Triggers
+   are stored in a trie, and parsing the body has to happen in order and relies
+   on some recursive behavior since snippets can be composed of multiple snippets
+*/
+use dashmap::{DashMap, ReadOnlyView};
+
+use rayon::iter::ParallelIterator;
+use tokio::sync::mpsc::Sender;
+use tonic::Status;
+
+//use sniper_common::service::SnippetInfo;
 
 use crate::{
-    snippet::{Loader, SnipComponent, Snippet, SnippetBuildMetadata, SnippetSet},
+    parser::Token,
+    snippet::{Loader, Snippet, SnippetSet},
     target::TargetData,
+    util::sniper_proto::{
+        snippet_component::Component, Functor, SnippetComponent, SnippetInfo, Tabstop,
+    },
 };
 
-use std::{
-    borrow::Cow,
-    collections::VecDeque,
-    iter,
-    sync::{Arc, Mutex},
-};
-
+use std::{borrow::Cow, sync::Arc};
+///The struct that stores all state related to the snippets themselves
 #[derive(Debug, Clone)]
 pub struct SnippetManager {
+    /// The keys are (language, snippet_name), the value is the struct containing
+    /// the deserialized snippet
     pub(crate) snippets: Arc<DashMap<(String, String), Snippet>>,
+    /// The keys are (language, set_name),  the set_name should correspond
+    /// to the file name, or some way map to it elsewhere. The value is a
+    /// struct with a vector of strings corresponding to the second half
+    /// of the key for snippets
     pub(crate) snippet_sets: Arc<DashMap<(String, String), SnippetSet>>,
 }
 
@@ -39,7 +51,8 @@ impl SnippetManager {
         }
     }
 
-    pub fn load(
+    ///Once the client has requested a set of snippets this function adds the set of snippets into the manager
+    pub(crate) fn load(
         &mut self,
         language: &str,
         snip_set_name: &str,
@@ -81,7 +94,7 @@ impl SnippetManager {
             .get(&(language.clone(), snippet_set.to_string()))
             .unwrap()
             .contents
-            .clone()
+            .clone() //TODO: figure out how to avoid cloning
             .into_iter()
             .map(move |s| {
                 (
@@ -116,5 +129,101 @@ impl SnippetManager {
         self.snippet_sets
             .remove(&(language.into(), snip_set_to_drop.into()));
     }
+    //TODO: implement increment/decrement after implementing TargetManager struct
+    //use iterator to handle both managers at once?
+    //pub fn increment(&self, )
+
+    pub(crate) fn fire(
+        &self,
+        language: String,
+        snippet_name: String,
+        tx: Sender<Result<SnippetComponent, Status>>,
+    ) {
+        let ammo = (*self.snippets).clone().into_read_only();
+        discharge(&language, snippet_name, ammo, &tx);
+        tx.closed();
+    }
 }
-mod parser;
+
+fn discharge(
+    language: &String,
+    snippet_name: String,
+    ammo: ReadOnlyView<(String, String), Snippet>,
+    tx: &Sender<Result<SnippetComponent, Status>>,
+) {
+    let snippet_key = &(language.into(), snippet_name.into());
+    let mut tokens: Vec<Token> = Vec::new();
+    if let Some(snippet) = ammo.get(snippet_key) {
+        let content = Cow::from(snippet.body.clone());
+        for i in 0..content.len() {
+            tokens.append(&mut crate::parser::snippet_component(&content[i]));
+        }
+    } else {
+        tx.closed();
+        return;
+    }
+
+    for token in tokens {
+        if let Some(snip_name) = strike(token, tx) {
+            discharge(language, snip_name, ammo.clone(), tx)
+        }
+    }
+}
+
+fn strike(token: Token, tx: &Sender<Result<SnippetComponent, Status>>) -> Option<String> {
+    match _chamber(token) {
+        ChamberType::ReadyComponent(comp) => {
+            tx.blocking_send(Ok(SnippetComponent {
+                component: Some(comp),
+            }));
+        }
+        ChamberType::Tab(tab_number, placeholders) => {
+            let mut content = Vec::<SnippetComponent>::new();
+            for placeholder in placeholders {
+                let ph = _chamber(placeholder);
+                //TODO: incomplete, come back and finish logic for tabstops
+                if let ChamberType::ReadyComponent(ph) = ph {
+                    content.push(SnippetComponent {
+                        component: Some(ph),
+                    });
+                };
+            }
+            tx.blocking_send(Ok(SnippetComponent {
+                component: Some(Component::Tabstop(Tabstop {
+                    number: tab_number as i32,
+                    content,
+                })),
+            }));
+        }
+        ChamberType::Snippet(snip_name) => return Some(snip_name),
+    };
+    None
+}
+enum ChamberType {
+    ReadyComponent(Component),
+    Tab(u32, Vec<Token>),
+    Snippet(String),
+}
+fn _chamber(token: Token) -> ChamberType {
+    match token {
+        Token::TabstopToken(tab_number, optional_placeholders) => {
+            if let Some(placeholders) = optional_placeholders {
+                ChamberType::Tab(tab_number, placeholders)
+            } else {
+                ChamberType::ReadyComponent(Component::Tabstop(Tabstop {
+                    number: tab_number as i32,
+                    content: Vec::new(),
+                }))
+            }
+        }
+        Token::TextToken(txt) => ChamberType::ReadyComponent(Component::Text(txt)),
+
+        Token::VariableToken(name, transform) => {
+            ChamberType::ReadyComponent(Component::Var(Functor {
+                name: name,
+                transform: transform,
+            }))
+        }
+        Token::SnippetToken(sub_snippet_name) => ChamberType::Snippet(sub_snippet_name),
+    }
+}
