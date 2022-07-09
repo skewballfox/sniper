@@ -4,7 +4,7 @@
     are allowed to be missing during deserialization so that the base syntax is
     compatible with existing vscode snippets
 */
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize};
 //these are the currently (planned) supported actions for snippets
 #[derive(Deserialize, Clone, Debug)]
 #[serde(tag = "action", content = "args")]
