@@ -11,9 +11,8 @@ use tonic::{
     transport::{Channel, Endpoint, Uri},
     Request,
 };
-//use sniper_common::service::SniperServiceClient;
-//use tarpc::{client, context};
 use tower::service_fn;
+
 //this is just a "test" client, will probably rewrite the server to have actual test when the project is further along
 #[tokio::main]
 pub async fn main() -> anyhow::Result<()> {
@@ -28,6 +27,7 @@ pub async fn main() -> anyhow::Result<()> {
 
     tracing::info!("client: {:#?}", client);
 
+    //first lets add "new session" to the servers list of targets
     tracing::info!("adding target");
     let target_request = Request::new(TargetRequest {
         session_id: session_id.clone(),
@@ -42,6 +42,8 @@ pub async fn main() -> anyhow::Result<()> {
 
     let snippet_name = Vec::from("if/elif/else");
 
+    //then we use the current user input(keystrokes) to widdle down
+    //the relevant snippets until the user chooses one
     for i in 1..snippet_name.len() + 1 {
         let completions_request = Request::new(CompletionsRequest {
             session_id: session_id.clone(),
@@ -55,11 +57,12 @@ pub async fn main() -> anyhow::Result<()> {
             completions
         );
     }
+    //lastly we request the user selected snippet
     let snippet_request = Request::new(SnippetRequest {
         session_id,
         uri: test_uri,
         snippet_name: String::from_utf8(snippet_name).unwrap(),
-    });
+    }); //TODO: consider changing the snippet name to a Vec<u8>
     let snippet = client.get_snippet(snippet_request).await;
     tracing::info!("Snippet: {:#?}", snippet);
 

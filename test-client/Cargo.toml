@@ -14,7 +14,6 @@ edition = "2021"
 futures = "0.3.14"
 anyhow = "1.0"
 tokio = {version="1.5.0",features=["net","macros","rt-multi-thread"]}#NOTE: more features may be added (as required)
-tokio-serde={version="0.8",features=["json"]}
 tokio-util={version="0.7.3",features=["codec"]}
 tonic="0.7.2"
 prost = "0.10.4"
