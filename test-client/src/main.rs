@@ -1,5 +1,7 @@
-//https://www.cs.brandeis.edu/~cs146a/rust/rustbyexample-02-21-2015/sockets.html
-
+/*
+    This is a "client" built entirely for testing the functionality of the server. Eventually as the server
+    becomes more developed, I'm hoping to also use this for stress testing with multiple client request going at once.
+*/
 pub mod sniper_proto {
     tonic::include_proto!("sniper");
 }
@@ -18,6 +20,7 @@ use tower::service_fn;
 pub async fn main() -> anyhow::Result<()> {
     // Bind a server socket
     init_tracing("Sniper Test Client")?;
+
     tracing::info!("Hello from sniper client!");
     let session_id = "12345".to_string();
     let test_uri = "test.py".to_string();
@@ -36,7 +39,6 @@ pub async fn main() -> anyhow::Result<()> {
     });
 
     client.add_target(target_request).await;
-    tracing::info!("requesting snippet");
 
     //tracing::info!("{:#?}", snippet.await);
 
@@ -57,14 +59,19 @@ pub async fn main() -> anyhow::Result<()> {
             completions
         );
     }
+    tracing::info!("requesting snippet");
     //lastly we request the user selected snippet
     let snippet_request = Request::new(SnippetRequest {
         session_id,
         uri: test_uri,
         snippet_name: String::from_utf8(snippet_name).unwrap(),
     }); //TODO: consider changing the snippet name to a Vec<u8>
-    let snippet = client.get_snippet(snippet_request).await;
-    tracing::info!("Snippet: {:#?}", snippet);
+    let mut component_stream = client.get_snippet(snippet_request).await?.into_inner();
+    while let Some(snippet_component) = component_stream.message().await? {
+        tracing::info!("Snippet Component: {:#?}", snippet_component);
+    }
+
+    //tracing::info!("Snippet: {:#?}", snippet);
 
     opentelemetry::global::shutdown_tracer_provider();
     Ok(())

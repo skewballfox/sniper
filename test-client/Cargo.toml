@@ -10,7 +10,6 @@ edition = "2021"
 
 
 [dependencies]
-#sniper-common={path="../sniper-common",features=["client"]}
 futures = "0.3.14"
 anyhow = "1.0"
 tokio = {version="1.5.0",features=["net","macros","rt-multi-thread"]}#NOTE: more features may be added (as required)
@@ -19,11 +18,11 @@ tonic="0.7.2"
 prost = "0.10.4"
 prost-types = "0.10.1"
 tower = "0.4.13"
-serde = {version="1.0.115", features=["derive"]}
-tracing = { version = "0.1" }
+serde = {version="1.0.138", features=["derive"]}
+tracing = { version = "0.1",features=["max_level_debug"] }
 tracing-opentelemetry = "0.17.3"
 opentelemetry = { version = "0.17.0", features = ["rt-tokio"] }
-opentelemetry-jaeger = { version = "0.16.0", features = ["tokio"] }
+opentelemetry-jaeger = { version = "0.16.0", features = ["rt-tokio"] }
 tracing-subscriber = "0.3.11"
 
 [build-dependencies]
