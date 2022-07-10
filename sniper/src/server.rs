@@ -8,6 +8,7 @@ use dashmap::DashMap;
 use tonic::codegen::futures_core;
 
 use std::sync::Arc;
+use std::thread;
 use tokio::sync::mpsc::{self};
 use tokio_stream::wrappers::ReceiverStream;
 
@@ -56,19 +57,19 @@ impl SniperService for Sniper {
             language,
         } = request.into_inner();
 
-        tracing::debug!("adding target: {:?},{:?},{:?}", session_id, uri, language);
+        tracing::info!("adding target: {:?},{:?},{:?}", session_id, uri, language);
         //let sniper=self.snip_lock.read().await;
         if self
             .targets
             .contains_key(&(session_id.clone(), uri.clone()))
         {
-            tracing::debug!("target already tracked");
+            tracing::info!("target already tracked");
             return Ok(Response::new(Void {}));
         }
-        tracing::debug!("loaded vars");
+        tracing::info!("loaded vars");
         //let targets=&*self.targets;
         if self.config.languages.contains_key(&language) {
-            tracing::debug!("config contains language {:?}", language);
+            tracing::info!("config contains language {:?}", language);
             let mut target_data = TargetData::new(&language);
 
             let mut snippet_manager = self.snippet_manager.clone();
@@ -123,7 +124,7 @@ impl SniperService for Sniper {
         } = request.into_inner();
         let target_key = &(session_id.to_string(), uri.to_string());
 
-        tracing::debug!("dropping target: {:?}", target_key);
+        tracing::info!("dropping target: {:?}", target_key);
         //make sure that the target is already being tracked
         if self.targets.contains_key(target_key) {
             //consider using drain filter in the future:
@@ -155,7 +156,7 @@ impl SniperService for Sniper {
             uri,
             user_input: keyboard_input,
         } = request.into_inner();
-        tracing::debug!(
+        tracing::info!(
             "User Input: {:?}",
             String::from_utf8(keyboard_input.clone())
         );
@@ -230,7 +231,7 @@ impl SniperService for Sniper {
             uri,
             snippet_name,
         } = request.into_inner();
-        tracing::debug!("requesting snippet: {:?}", snippet_name);
+        tracing::info!("requesting snippet: {:?}", snippet_name);
         let (tx, rx) = mpsc::channel(64);
         let language = self
             .targets
@@ -241,7 +242,7 @@ impl SniperService for Sniper {
 
         let snippet_manager = self.snippet_manager.clone();
 
-        tokio::spawn(async move {
+        thread::spawn(move || {
             snippet_manager.fire(language, snippet_name, tx);
         });
 

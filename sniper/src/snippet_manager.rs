@@ -154,12 +154,14 @@ fn chamber(
     mut tab_offset: i32,
     tx: &Sender<Result<SnippetComponent, Status>>,
 ) -> i32 {
+    tracing::debug!("starting chamber for {:?}", snippet_name);
     let snippet_key = &(language.into(), snippet_name.into());
     let mut tokens: Vec<ComponentType> = Vec::new();
 
     let mut tab_count = 0;
 
     if let Some(snippet) = ammo.get(snippet_key) {
+        tracing::debug!("snippet found: {:#?}", snippet);
         let content = Cow::from(snippet.body.clone());
         for i in 0..content.len() {
             tokens.append(&mut crate::parser::snippet_component(&content[i]));
