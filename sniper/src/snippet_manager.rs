@@ -18,7 +18,7 @@ use tonic::Status;
 //use sniper_common::service::SnippetInfo;
 
 use crate::{
-    parser::Token,
+    parser::ComponentType,
     snippet::{Loader, Snippet, SnippetSet},
     target::TargetData,
     util::sniper_proto::{
@@ -140,90 +140,78 @@ impl SnippetManager {
         tx: Sender<Result<SnippetComponent, Status>>,
     ) {
         let ammo = (*self.snippets).clone().into_read_only();
-        discharge(&language, snippet_name, ammo, &tx);
+        let mut offset = 0;
+        chamber(&language, snippet_name, ammo, 0, &tx);
+        tracing::debug!("closing component producer");
         tx.closed();
     }
 }
 
-fn discharge(
+fn chamber(
     language: &String,
     snippet_name: String,
     ammo: ReadOnlyView<(String, String), Snippet>,
+    mut tab_offset: i32,
     tx: &Sender<Result<SnippetComponent, Status>>,
-) {
+) -> i32 {
     let snippet_key = &(language.into(), snippet_name.into());
-    let mut tokens: Vec<Token> = Vec::new();
+    let mut tokens: Vec<ComponentType> = Vec::new();
+
+    let mut tab_count = 0;
+
     if let Some(snippet) = ammo.get(snippet_key) {
         let content = Cow::from(snippet.body.clone());
         for i in 0..content.len() {
             tokens.append(&mut crate::parser::snippet_component(&content[i]));
         }
     } else {
-        tx.closed();
-        return;
+        return 0;
     }
 
     for token in tokens {
-        if let Some(snip_name) = strike(token, tx) {
-            discharge(language, snip_name, ammo.clone(), tx)
+        match token {
+            ComponentType::ReadyComponent(component) => discharge(component, tx),
+            ComponentType::Tabstop(number, args) => {
+                //handle args
+                //TODO: rework when adding support for placeholders that aren't just raw text
+                let content = args
+                    .into_iter()
+                    .map(|comp| SnippetComponent {
+                        component: Some(comp),
+                    })
+                    .collect();
+                discharge(
+                    Component::Tabstop(Tabstop {
+                        number: number as i32 + tab_offset,
+                        content,
+                    }),
+                    tx,
+                );
+                tab_count += 1;
+            }
+            ComponentType::Snippet(sub_snip) => {
+                let mut sub_offset = tab_offset + tab_count;
+                sub_offset = chamber(language, sub_snip, ammo.clone(), sub_offset, tx);
+
+                if sub_offset != tab_offset + tab_count {
+                    //if S is a snippet with 3 tabstops and V is a nested snippet with 2,
+                    //where the layout is like S1,S2,V1,V2,S3
+                    //in order for S3 to have the correct value (5), you must account
+                    //for the offset of the nested snippet minus the current tab count
+                    //for the parent snippet
+                    tab_offset = sub_offset - tab_count;
+                }
+            }
         }
     }
+    tab_offset + tab_count
 }
 
-fn strike(token: Token, tx: &Sender<Result<SnippetComponent, Status>>) -> Option<String> {
-    match _chamber(token) {
-        ChamberType::ReadyComponent(comp) => {
-            tx.blocking_send(Ok(SnippetComponent {
-                component: Some(comp),
-            }));
-        }
-        ChamberType::Tab(tab_number, placeholders) => {
-            let mut content = Vec::<SnippetComponent>::new();
-            for placeholder in placeholders {
-                let ph = _chamber(placeholder);
-                //TODO: incomplete, come back and finish logic for tabstops
-                if let ChamberType::ReadyComponent(ph) = ph {
-                    content.push(SnippetComponent {
-                        component: Some(ph),
-                    });
-                };
-            }
-            tx.blocking_send(Ok(SnippetComponent {
-                component: Some(Component::Tabstop(Tabstop {
-                    number: tab_number as i32,
-                    content,
-                })),
-            }));
-        }
-        ChamberType::Snippet(snip_name) => return Some(snip_name),
+fn discharge(component: Component, tx: &Sender<Result<SnippetComponent, Status>>) {
+    let round = SnippetComponent {
+        component: Some(component),
     };
-    None
-}
-enum ChamberType {
-    ReadyComponent(Component),
-    Tab(u32, Vec<Token>),
-    Snippet(String),
-}
-fn _chamber(token: Token) -> ChamberType {
-    match token {
-        Token::TabstopToken(tab_number, optional_placeholders) => {
-            if let Some(placeholders) = optional_placeholders {
-                ChamberType::Tab(tab_number, placeholders)
-            } else {
-                ChamberType::ReadyComponent(Component::Tabstop(Tabstop {
-                    number: tab_number as i32,
-                    content: Vec::new(),
-                }))
-            }
-        }
-        Token::TextToken(txt) => ChamberType::ReadyComponent(Component::Text(txt)),
-
-        Token::VariableToken(name, transform) => {
-            ChamberType::ReadyComponent(Component::Var(Functor {
-                name: name,
-                transform: transform,
-            }))
-        }
-        Token::SnippetToken(sub_snippet_name) => ChamberType::Snippet(sub_snippet_name),
-    }
+    //just found out why get_snippet wasn't working
+    //TODO: replace with something lock free as this is being called asynchronously
+    tx.blocking_send(Ok(round));
 }

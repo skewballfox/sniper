@@ -56,20 +56,19 @@ impl SniperService for Sniper {
             language,
         } = request.into_inner();
 
-        println!("adding target: {:?},{:?},{:?}", session_id, uri, language);
+        tracing::debug!("adding target: {:?},{:?},{:?}", session_id, uri, language);
         //let sniper=self.snip_lock.read().await;
         if self
             .targets
             .contains_key(&(session_id.clone(), uri.clone()))
         {
-            println!("target already tracked");
-
+            tracing::debug!("target already tracked");
             return Ok(Response::new(Void {}));
         }
-        println!("loaded vars");
+        tracing::debug!("loaded vars");
         //let targets=&*self.targets;
         if self.config.languages.contains_key(&language) {
-            println!("config contains language {:?}", language);
+            tracing::debug!("config contains language {:?}", language);
             let mut target_data = TargetData::new(&language);
 
             let mut snippet_manager = self.snippet_manager.clone();
@@ -109,7 +108,7 @@ impl SniperService for Sniper {
             //should have some way of mitigating request for adding nonviable targets
             //client side
         }
-        println!("target_added");
+        tracing::debug!("target_added");
         Ok(Response::new(Void {}))
     }
 
@@ -124,7 +123,7 @@ impl SniperService for Sniper {
         } = request.into_inner();
         let target_key = &(session_id.to_string(), uri.to_string());
 
-        println!("dropping target: {:?}", target_key);
+        tracing::debug!("dropping target: {:?}", target_key);
         //make sure that the target is already being tracked
         if self.targets.contains_key(target_key) {
             //consider using drain filter in the future:
@@ -156,7 +155,10 @@ impl SniperService for Sniper {
             uri,
             user_input: keyboard_input,
         } = request.into_inner();
-        println!("{:?}", String::from_utf8(keyboard_input.clone()));
+        tracing::debug!(
+            "User Input: {:?}",
+            String::from_utf8(keyboard_input.clone())
+        );
         let target_key = (session_id, uri);
         let _snippet_manager = self.snippet_manager.clone();
         let completions: Vec<SnippetInfo> = match Arc::clone(&self.targets).entry(target_key) {
@@ -188,7 +190,7 @@ impl SniperService for Sniper {
 
                 let CompletionsRequest{session_id,uri,user_input:keyboard_input}=msg;
                 let target_key = (session_id, uri);
-                println!("{:?}", String::from_utf8(keyboard_input.clone()));
+                tracing::debug!("{:?}", String::from_utf8(keyboard_input.clone()));
 
 
             let completions: Vec<SnippetInfo> = match Arc::clone(&self.targets).entry(target_key) {
@@ -228,7 +230,7 @@ impl SniperService for Sniper {
             uri,
             snippet_name,
         } = request.into_inner();
-
+        tracing::debug!("requesting snippet: {:?}", snippet_name);
         let (tx, rx) = mpsc::channel(64);
         let language = self
             .targets

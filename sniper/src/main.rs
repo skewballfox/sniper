@@ -18,6 +18,7 @@ use std::sync::Arc;
 
 use tokio::net::UnixListener;
 
+use tokio_stream::wrappers::UnixListenerStream;
 use tonic::transport::Server;
 //use daemonize::Daemonize;
 use dashmap::DashMap;
@@ -25,21 +26,13 @@ use dashmap::DashMap;
 #[cfg(unix)]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    use tokio_stream::wrappers::UnixListenerStream;
-
     //initialize jaeger tracing
     util::init_tracing("Sniper Server").expect("failed to initialize tracing");
 
     let path = "/tmp/sniper.socket";
-    //free the socket created by old instances
-    let _ = tokio::fs::remove_file(path);
-    //create the path to the file if it doesn't exist
-    tokio::fs::create_dir_all(Path::new(path).parent().unwrap()).await?;
-    //create a lister on the specified socket
-    let listener = UnixListener::bind(path).unwrap();
 
-    let incoming = UnixListenerStream::new(listener);
-
+    let incoming = create_listener_stream(path).expect("failed to create socket");
+    //create the server that will process the request
     let sniper = create_sniper_server();
 
     Server::builder()
@@ -48,6 +41,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     Ok(())
+}
+
+///Function to create a unix domain socket with the provided path
+fn create_listener_stream(path: &str) -> Result<UnixListenerStream, std::io::Error> {
+    //free the socket created by old instances
+    let _ = std::fs::remove_file(path);
+    //create the path to the file if it doesn't exist
+    std::fs::create_dir_all(
+        Path::new(path)
+            .parent()
+            .expect(&format!("could not get parent path from {:?}", path)),
+    );
+    //create a lister on the specified socket
+    let listener =
+        UnixListener::bind(path).expect(&format!("failed to bind Listener to path: {:?}", path));
+    Ok(UnixListenerStream::new(listener))
 }
 
 fn create_sniper_server() -> Sniper {

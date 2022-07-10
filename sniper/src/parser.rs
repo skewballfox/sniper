@@ -18,6 +18,15 @@ use nom::{
     IResult,
 };
 
+use crate::util::sniper_proto::{snippet_component::Component, Functor, Tabstop};
+
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) enum ComponentType {
+    ReadyComponent(Component),
+    Tabstop(u32, Vec<Component>),
+    Snippet(String),
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Token {
     ///a tabstop, the Option<vec<Token>> is a vector of default values
@@ -34,7 +43,7 @@ pub(crate) enum Token {
 /// Top level function for the parser, probably the only one you want to use unless extending the
 /// parser itself
 /// this takes a snippet string and returns a vector of Tokens
-pub(crate) fn snippet_component(snippet_string: &str) -> Vec<Token> {
+pub(crate) fn snippet_component(snippet_string: &str) -> Vec<ComponentType> {
     iterator(
         snippet_string,
         fold_many1(
@@ -64,14 +73,16 @@ fn sp<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
 }
 
 ///Used for top level raw text, grab everything until you hit $
-fn text(snippet_string: &str) -> IResult<&str, Token> {
+fn text(snippet_string: &str) -> IResult<&str, ComponentType> {
     //if $
     //\t$
-    map(take_until("$"), |s: &str| Token::TextToken(s.into()))(snippet_string)
+    map(take_until("$"), |s: &str| {
+        ComponentType::ReadyComponent(Component::Text(s.into()))
+    })(snippet_string)
 }
 
 ///function for everything that isn't raw text,children parsers are called depending on presence of brackets
-fn non_text_token(snippet_string: &str) -> IResult<&str, Token> {
+fn non_text_token(snippet_string: &str) -> IResult<&str, ComponentType> {
     //$!if, {!elif}
     //$TM_SELECTED_TEXT, ${TM_FILENAME/(.*)\..+$/$1/}
     //$1, ${1:expression}, ${1|text,alternative|}
@@ -79,7 +90,7 @@ fn non_text_token(snippet_string: &str) -> IResult<&str, Token> {
 }
 
 ///Used for non_text_tokens without brackets, which don't take arguments
-fn raw_component(snippet_string: &str) -> IResult<&str, Token> {
+fn raw_component(snippet_string: &str) -> IResult<&str, ComponentType> {
     alt((
         tabstop,      //$1
         snippet_name, //$!if
@@ -87,7 +98,7 @@ fn raw_component(snippet_string: &str) -> IResult<&str, Token> {
     ))(snippet_string)
 }
 
-fn nested_component(snippet_string: &str) -> IResult<&str, Token> {
+fn nested_component(snippet_string: &str) -> IResult<&str, ComponentType> {
     delimited(
         char('{'),
         alt((
@@ -103,15 +114,18 @@ fn nested_component(snippet_string: &str) -> IResult<&str, Token> {
 //but I'm thinking about handling variables as functors with only one step
 
 ///basic variable without transform
-fn variable(snippet_string: &str) -> IResult<&str, Token> {
+fn variable(snippet_string: &str) -> IResult<&str, ComponentType> {
     //TM_SELECTED_TEXT
-    map(alphanumeric1, |s: &str| -> Token {
-        Token::VariableToken(s.to_string(), None)
+    map(alphanumeric1, |s: &str| -> ComponentType {
+        ComponentType::ReadyComponent(Component::Var(Functor {
+            name: s.to_string(),
+            transform: None,
+        }))
     })(snippet_string)
 }
 
 ///variable in bracket which may have a transform
-fn nested_variable(snippet_string: &str) -> IResult<&str, Token> {
+fn nested_variable(snippet_string: &str) -> IResult<&str, ComponentType> {
     //{TM_SELECTED_TEXT}
     //${TM_FILENAME/(.*)\..+$/$1/}
     let (snippet_string, (res, args)) = pair(
@@ -121,21 +135,33 @@ fn nested_variable(snippet_string: &str) -> IResult<&str, Token> {
         })),
     )(snippet_string)?;
 
-    return Ok((snippet_string, Token::VariableToken(res.into(), args)));
+    return Ok((
+        snippet_string,
+        ComponentType::ReadyComponent(Component::Var(Functor {
+            name: res.into(),
+            transform: args,
+        })),
+    ));
 }
 
 ///used for basic tabstops which don't have optional arguments
-fn tabstop(snippet_string: &str) -> IResult<&str, Token> {
+fn tabstop(snippet_string: &str) -> IResult<&str, ComponentType> {
     //$1
     //NOTE: may simplify tabstop, placeholder, and placeholder arguments to a single function
     let (snippet_string, tabstop_value) =
         map_res(digit1, |s: &str| s.parse::<u32>())(snippet_string)?;
 
-    Ok((snippet_string, Token::TabstopToken(tabstop_value, None)))
+    Ok((
+        snippet_string,
+        ComponentType::ReadyComponent(Component::Tabstop(Tabstop {
+            number: tabstop_value as i32,
+            content: Vec::new(),
+        })),
+    ))
 }
 
 ///used for placeholders which may have values or a list of possible values
-fn placeholder(snippet_string: &str) -> IResult<&str, Token> {
+fn placeholder(snippet_string: &str) -> IResult<&str, ComponentType> {
     //${1:another ${2:placeholder}}
     //{1},{1:text},{1|text,alternative|}
     let (snippet_string, tabstop_value) =
@@ -143,13 +169,13 @@ fn placeholder(snippet_string: &str) -> IResult<&str, Token> {
     let (snippet_string, tabstop_args) = placeholder_arguments(snippet_string)?;
     Ok((
         snippet_string,
-        Token::TabstopToken(tabstop_value, Some(tabstop_args)),
+        ComponentType::Tabstop(tabstop_value, tabstop_args),
     ))
 }
 
 ///Used for the content of the placeholders, which are snippet tokens themselves
 /// this could be used for an almost endless customization options even without programmatic snippets
-fn placeholder_arguments(snippet_string: &str) -> IResult<&str, Vec<Token>> {
+fn placeholder_arguments(snippet_string: &str) -> IResult<&str, Vec<Component>> {
     //:another ${2:placeholder}
     //:text},|text,alternative|
     let (snippet_string, placeholder_args) = alt((
@@ -158,8 +184,8 @@ fn placeholder_arguments(snippet_string: &str) -> IResult<&str, Vec<Token>> {
             char('|'),
             separated_list1(
                 char(','),
-                map(alphanumeric1, |s: &str| -> Token {
-                    Token::TextToken(s.into())
+                map(alphanumeric1, |s: &str| -> Component {
+                    Component::Text(s.into())
                 }),
             ), //TODO: could rework the syntax to support list of snippet components
             char('|'),
@@ -170,7 +196,7 @@ fn placeholder_arguments(snippet_string: &str) -> IResult<&str, Vec<Token>> {
 
 ///used for the text which composes a placeholder argument, which needs to stop in multiple cases
 /// may wind up needing to split this into multiple functions
-fn placeholder_text(snippet_string: &str) -> IResult<&str, Token> {
+fn placeholder_text(snippet_string: &str) -> IResult<&str, Component> {
     //text}
     //|text,alternative|
     //another ${2:placeholder}
@@ -178,24 +204,25 @@ fn placeholder_text(snippet_string: &str) -> IResult<&str, Token> {
         |c| c == '$' || c == '}', //|| c == '|' || c == ','
     )(snippet_string)?;
 
-    return Ok((snippet_string, Token::TextToken(snip_component.to_string())));
+    return Ok((snippet_string, Component::Text(snip_component.to_string())));
 }
 
 ///Used for the names of snippets, may be extended to take arguments for those snippets
-fn snippet_name(snippet_string: &str) -> IResult<&str, Token> {
+fn snippet_name(snippet_string: &str) -> IResult<&str, ComponentType> {
     //$!if
     //{!elif} NOTE: still working out what snippet args should look like
-    map(alphanumeric1, |s: &str| Token::SnippetToken(s.into()))(snippet_string)
+    map(alphanumeric1, |s: &str| ComponentType::Snippet(s.into()))(snippet_string)
 }
 
 ///placeholder for function which will handle nested snippet=s with optional arguments
-fn snippet_object(snippet_string: &str) -> IResult<&str, Token> {
+fn snippet_object(snippet_string: &str) -> IResult<&str, ComponentType> {
     snippet_name(snippet_string)
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::util::sniper_proto::SnippetComponent;
     struct Snips {
         ifv: Vec<String>,
         elifv: Vec<String>,
@@ -217,14 +244,18 @@ mod test {
         let snips = Snips::new();
         let res = text(&snips.ifv[0]).unwrap();
         assert!(res.0.eq("${1:expression}:"));
-        assert!(Token::TextToken("if ".to_string()) == res.1); //had to figure out to implement partialeq on the enum Token the hard way
+        assert!(ComponentType::ReadyComponent(Component::Text("if ".to_string())) == res.1);
+        //had to figure out to implement partialeq on the enum Token the hard way
     }
 
     #[test]
     fn test_non_text() {
         assert_eq!(
             non_text_token("${1:expression}:"),
-            Ok(("{1:expression}", Token::TextToken("if ".into())))
+            Ok((
+                "{1:expression}",
+                ComponentType::ReadyComponent(Component::Text("if ".into()))
+            ))
         )
     }
 
@@ -234,17 +265,19 @@ mod test {
             nested_component("{1:another ${2:placeholder}}"),
             Ok((
                 "",
-                Token::TabstopToken(
+                ComponentType::Tabstop(
                     1,
-                    Some(vec![
-                        Token::TextToken("another ".to_string()),
-                        Token::TabstopToken(
-                            2,
-                            Some(vec![Token::TextToken("placeholder".to_string())])
-                        )
-                    ])
+                    vec![
+                        Component::Text("another ".to_string()),
+                        Component::Tabstop(Tabstop {
+                            number: 2,
+                            content: vec![SnippetComponent {
+                                component: Some(Component::Text("placeholder".to_string()))
+                            }]
+                        })
+                    ]
                 )
             ))
-        ) //WIP
+        ) //WIP, currently fails
     }
 }

@@ -67,6 +67,7 @@ pub async fn main() -> anyhow::Result<()> {
         snippet_name: String::from_utf8(snippet_name).unwrap(),
     }); //TODO: consider changing the snippet name to a Vec<u8>
     let mut component_stream = client.get_snippet(snippet_request).await?.into_inner();
+    tracing::debug!("component_stream: {:?}", component_stream);
     while let Some(snippet_component) = component_stream.message().await? {
         tracing::info!("Snippet Component: {:#?}", snippet_component);
     }
