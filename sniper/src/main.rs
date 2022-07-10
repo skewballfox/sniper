@@ -16,9 +16,6 @@ use crate::util::sniper_proto::sniper_server::SniperServer;
 use std::path::Path;
 use std::sync::Arc;
 
-//use futures::{future, lock::Mutex, prelude::*};
-
-use futures::TryFutureExt;
 use tokio::net::UnixListener;
 
 use tonic::transport::Server;
@@ -28,6 +25,11 @@ use dashmap::DashMap;
 #[cfg(unix)]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    use tokio_stream::wrappers::UnixListenerStream;
+
+    //initialize jaeger tracing
+    util::init_tracing("Sniper Server").expect("failed to initialize tracing");
+
     let path = "/tmp/sniper.socket";
     //free the socket created by old instances
     let _ = tokio::fs::remove_file(path);
@@ -36,9 +38,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     //create a lister on the specified socket
     let listener = UnixListener::bind(path).unwrap();
 
-    //initialize jaeger tracing
-    util::init_tracing("Sniper Server").expect("failed to initialize tracing");
+    let incoming = UnixListenerStream::new(listener);
 
+    let sniper = create_sniper_server();
+
+    Server::builder()
+        .add_service(SniperServer::new(sniper))
+        .serve_with_incoming(incoming)
+        .await?;
+
+    Ok(())
+}
+
+fn create_sniper_server() -> Sniper {
     //will probably become more important later, right now just handles pathing
     let config = Arc::new(SniperConfig::new());
     //the individuals files, or editor sessions using sniper(still trying to figure out which)
@@ -47,28 +59,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let snippets = Arc::new(DashMap::new());
     // the set of snippets currently being used, along with the number of targets using them
     let snippet_sets = Arc::new(DashMap::new());
+    // the handler of the shared state holding all data relevant to snippets
     let snippet_manager = SnippetManager::new(snippets.clone(), snippet_sets.clone());
 
-    let sniper = Sniper::new(config.clone(), targets.clone(), snippet_manager.clone());
-
-    let (_stream, _addr) = listener.accept().await.unwrap();
-
-    let incoming = {
-        let uds = UnixListener::bind(path)?;
-
-        async_stream::stream! {
-            loop {
-                let item = uds.accept().map_ok(|(st, _)| crate::util::unix::UnixStream(st)).await;
-
-                yield item;
-            }
-        }
-    };
-
-    Server::builder()
-        .add_service(SniperServer::new(sniper))
-        .serve_with_incoming(incoming)
-        .await?;
-
-    Ok(())
+    Sniper::new(config.clone(), targets.clone(), snippet_manager.clone())
 }
