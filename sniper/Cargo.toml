@@ -20,7 +20,7 @@ serde_json = "1"
 tokio = {version="1.5.0",features=["net","fs","macros","rt-multi-thread"]}#NOTE: more features may be added (as required)
 tokio-util={version="0.7.3",features=["codec"]}
 tokio-stream={version="0.1.9"}
-dashmap = {version="^5.0", features=["serde","rayon"]}
+dashmap = {version="5.3.4", features=["serde","rayon"]}
 qp-trie={version="0.8.0",features=["serde"]}
 rayon = {version="1.5"}
 serde-tuple-vec-map={version="1.0.0"}
