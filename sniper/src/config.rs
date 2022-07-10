@@ -41,6 +41,7 @@ struct Loader {
 }
 
 impl SniperConfig {
+    //TODO: need to add an option to set the path to the config dir when called
     pub fn new() -> Self {
         let path = BaseDirs::new()
             .unwrap()

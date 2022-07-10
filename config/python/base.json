@@ -50,8 +50,8 @@
       "prefix": "if/else",
       "type": "Statement",
       "body": [
-         "$$if",
-         "$$else"
+         "$!if",
+         "$!else"
       ],
       "description": "Code snippet for an if statement with else"
    },
@@ -59,9 +59,9 @@
       "prefix": "if/elif/else",
       "type": "Statement",
       "body": [
-         "$$if",
-         "$$elif",
-         "$$else"
+         "$!if",
+         "$!elif",
+         "$!else"
       ],
       "description": "Code snippet for an if statement with else"
    },
@@ -78,8 +78,8 @@
       "prefix": "while/else",
       "type": "Statement",
       "body": [
-         "$$while",
-         "$$else"
+         "$!while",
+         "$!else"
       ],
       "description": "Code snippet for a while loop with else"
    },
@@ -96,8 +96,8 @@
       "prefix": "for/else",
       "type": "Statement",
       "body": [
-         "$$for",
-         "$$else"
+         "$!for",
+         "$!else"
       ],
       "description": "Code snippet for a for loop with else"
    },
