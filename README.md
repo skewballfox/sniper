@@ -12,7 +12,7 @@ Sniper is an editor agnostic stateful snippet manager. The snippet syntax is cur
 
 #### TL; DR
 
-- you can write (hopefully programmatic) snippets that have the largest user base
+- you can write snippets that will be usable in every editor with a client
 - it's one less thing you have to set up when trying out a new editor, or writing your own
 - snippets are
   - modular: you can load and unload sets as you need them
@@ -28,9 +28,9 @@ IMO, part of the reason snippets aren't more widely used is because of the indiv
 
 Currently I'm working towards supporting a superset of the LSP snippet syntax, which by itself isn't much, but will make it rather easy to implement snippets in new editors (rather than building the functionality inside the editor or a plugin for the editor), and also makes it easy to use your current vscode snippets across editors(once they are implemented).
 
-Also lastly, and arguably most important, I want to support some system of snippet sharing/distribution whether through simple github gist or something like cargo crates. my goal is to eventually make it to where you could run something like `sniper --install-recommended` and download snippets for the languages **and the libraries** which you have on your system.
+Eventually I want to support some system of snippet sharing/distribution whether through simple github gist or something like cargo crates. my goal is to make it to where you could run something like `sniper --install-recommended` and download snippets for the languages **and the libraries** which you have on your system.
 
-As an example it's easy to build an rpc server with libraries like tonic and tarpc, but I want to make it to where you can do so with minimum keystrokes, in a way that supports the contextual nuance required to build one for your specific project.
+As an example: it's fairlyeasy to build an rpc service with libraries like tonic or tarpc, but I want to make it to where you can do so with minimum keystrokes, in a way that supports the contextual nuance required to build one for your specific project.
 
 ## Installation
 
