@@ -31,7 +31,7 @@ serde_bytes={version="0.11.5"}
 toml = {version="0.5", features = ["preserve_order"]}#NOTE: still used for config
 directories = "^4.0.1"
 libc = "0.2.71"
-nom="^7.1"
+nom="^7.1.1"
 tonic="0.7.2"
 prost = "0.10.4"
 prost-types = "0.10.1"

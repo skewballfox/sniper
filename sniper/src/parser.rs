@@ -9,11 +9,17 @@
 use nom::{
     self,
     branch::alt,
-    bytes::streaming::{tag, take_till, take_until, take_while},
-    character::streaming::{alphanumeric1, char, digit1},
-    combinator::{iterator, map, map_res, opt},
+    bytes::{
+        complete::take_until1,
+        complete::{tag, take_till, take_until, take_while},
+    },
+    character::{
+        complete::alpha0,
+        complete::{alpha1, alphanumeric1, char, digit1},
+    },
+    combinator::{all_consuming, complete, iterator, map, map_res, opt},
     error::ParseError,
-    multi::{fold_many1, separated_list1},
+    multi::{fold_many0, fold_many1, separated_list1},
     sequence::{delimited, pair, preceded},
     IResult,
 };
@@ -44,24 +50,30 @@ pub(crate) enum Token {
 /// parser itself
 /// this takes a snippet string and returns a vector of Tokens
 pub(crate) fn snippet_component(snippet_string: &str) -> Vec<ComponentType> {
-    iterator(
-        snippet_string,
-        fold_many1(
-            pair(opt(text), opt(non_text_token)),
-            Vec::new,
-            |mut acc: Vec<_>, (first, second)| {
-                if let Some(res) = first {
-                    acc.push(res)
-                };
-                if let Some(res) = second {
-                    acc.push(res)
-                };
-                acc
-            },
-        ),
-    )
-    .flatten()
-    .collect::<Vec<_>>()
+    tracing::debug!("attempting to parse snippet string {:?}", snippet_string);
+
+    let res = complete(fold_many1(
+        pair(opt(text), opt(non_text_token)),
+        Vec::new,
+        |mut acc: Vec<_>, (first, second)| {
+            if let Some(res) = first {
+                acc.push(res)
+            };
+            if let Some(res) = second {
+                acc.push(res)
+            };
+            tracing::debug!("value of acc is: {:?}", acc);
+            acc
+        },
+    ))(snippet_string)
+    .unwrap();
+
+    if input.len() == 0 {
+        return res;
+    } else {
+        tracing::error!("Error with parsing substring {:?}", snippet_string);
+        Vec::new()
+    }
 }
 
 fn sp<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
@@ -76,7 +88,8 @@ fn sp<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
 fn text(snippet_string: &str) -> IResult<&str, ComponentType> {
     //if $
     //\t$
-    map(take_until("$"), |s: &str| {
+    tracing::debug!("attempting to parse text from {:?}", snippet_string);
+    map(take_until1("$"), |s: &str| {
         ComponentType::ReadyComponent(Component::Text(s.into()))
     })(snippet_string)
 }
@@ -86,25 +99,34 @@ fn non_text_token(snippet_string: &str) -> IResult<&str, ComponentType> {
     //$!if, {!elif}
     //$TM_SELECTED_TEXT, ${TM_FILENAME/(.*)\..+$/$1/}
     //$1, ${1:expression}, ${1|text,alternative|}
+    tracing::debug!("attempting to parse non-text from {:?}", snippet_string);
     preceded(char('$'), alt((nested_component, raw_component)))(snippet_string)
 }
 
 ///Used for non_text_tokens without brackets, which don't take arguments
 fn raw_component(snippet_string: &str) -> IResult<&str, ComponentType> {
+    tracing::debug!(
+        "attempting to parse raw component from {:?}",
+        snippet_string
+    );
     alt((
-        tabstop,      //$1
-        snippet_name, //$!if
-        variable,     //TM_SELECTED_TEXT
+        tabstop,      // 1
+        snippet_name, // !if
+        variable,     // TM_SELECTED_TEXT
     ))(snippet_string)
 }
 
 fn nested_component(snippet_string: &str) -> IResult<&str, ComponentType> {
+    tracing::debug!(
+        "attempting to parse nested component from {:?}",
+        snippet_string
+    );
     delimited(
         char('{'),
         alt((
             placeholder,     //{1}, {1:text}, {1|text,alternative|}
-            snippet_object,  //${!if}, etc...
-            nested_variable, //{!if}, {TM_FILENAME/(.*)\..+$/$1/}
+            snippet_object,  //{!if}, etc...
+            nested_variable, //{TM_FILENAME/(.*)\..+$/$1/}
         )),
         char('}'),
     )(snippet_string)
@@ -116,6 +138,7 @@ fn nested_component(snippet_string: &str) -> IResult<&str, ComponentType> {
 ///basic variable without transform
 fn variable(snippet_string: &str) -> IResult<&str, ComponentType> {
     //TM_SELECTED_TEXT
+    tracing::debug!("attempting to parse variable from {:?}", snippet_string);
     map(alphanumeric1, |s: &str| -> ComponentType {
         ComponentType::ReadyComponent(Component::Var(Functor {
             name: s.to_string(),
@@ -211,7 +234,16 @@ fn placeholder_text(snippet_string: &str) -> IResult<&str, Component> {
 fn snippet_name(snippet_string: &str) -> IResult<&str, ComponentType> {
     //$!if
     //{!elif} NOTE: still working out what snippet args should look like
-    map(alphanumeric1, |s: &str| ComponentType::Snippet(s.into()))(snippet_string)
+    tracing::debug!("attempting to parse snippet name from {:?}", snippet_string);
+    let res = preceded(
+        char('!'),
+        map(alpha0, |s: &str| {
+            tracing::debug!("s: {:?}", s);
+            ComponentType::Snippet(s.into())
+        }),
+    )(snippet_string);
+    tracing::debug!("result of snippet_name: {:?}", res);
+    res
 }
 
 ///placeholder for function which will handle nested snippet=s with optional arguments

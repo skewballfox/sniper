@@ -163,14 +163,21 @@ fn chamber(
     if let Some(snippet) = ammo.get(snippet_key) {
         tracing::debug!("snippet found: {:#?}", snippet);
         let content = Cow::from(snippet.body.clone());
+        let mut tmp: Vec<ComponentType>;
         for i in 0..content.len() {
-            tokens.append(&mut crate::parser::snippet_component(&content[i]));
+            tmp = crate::parser::snippet_component(&content[i]);
+            if tmp.len() == 0 {
+                tracing::error!("error encountered while parsing snippet: {:?}", snippet_key)
+            }
+            tracing::debug!("produced tokens {:?}", tmp);
+            tokens.append(&mut tmp);
         }
     } else {
         return 0;
     }
 
     for token in tokens {
+        tracing::debug!("processing token {:#?}", token);
         match token {
             ComponentType::ReadyComponent(component) => discharge(component, tx),
             ComponentType::Tabstop(number, args) => {
@@ -211,9 +218,11 @@ fn chamber(
 
 fn discharge(component: Component, tx: &Sender<Result<SnippetComponent, Status>>) {
     let round = SnippetComponent {
-        component: Some(component),
+        component: Some(component.clone()),
     };
+
     //just found out why get_snippet wasn't working
     //TODO: replace with something lock free as this is being called asynchronously
-    tx.blocking_send(Ok(round));
+    tx.blocking_send(Ok(round))
+        .expect(&format!("failed to send component {:?}", component));
 }
