@@ -17,9 +17,9 @@ use nom::{
         complete::alpha0,
         complete::{alpha1, alphanumeric1, char, digit1},
     },
-    combinator::{all_consuming, complete, iterator, map, map_res, opt},
+    combinator::{complete, eof, iterator, map, map_res, opt},
     error::ParseError,
-    multi::{fold_many0, fold_many1, separated_list1},
+    multi::{fold_many0, fold_many1, many_till, separated_list1},
     sequence::{delimited, pair, preceded},
     IResult,
 };
@@ -52,28 +52,16 @@ pub(crate) enum Token {
 pub(crate) fn snippet_component(snippet_string: &str) -> Vec<ComponentType> {
     tracing::debug!("attempting to parse snippet string {:?}", snippet_string);
 
-    let res = complete(fold_many1(
-        pair(opt(text), opt(non_text_token)),
-        Vec::new,
-        |mut acc: Vec<_>, (first, second)| {
-            if let Some(res) = first {
-                acc.push(res)
-            };
-            if let Some(res) = second {
-                acc.push(res)
-            };
-            tracing::debug!("value of acc is: {:?}", acc);
-            acc
-        },
-    ))(snippet_string)
-    .unwrap();
+    let res = complete(many_till(alt((text, non_text_token)), eof))(snippet_string);
 
-    if input.len() == 0 {
-        return res;
-    } else {
-        tracing::error!("Error with parsing substring {:?}", snippet_string);
-        Vec::new()
+    match res {
+        Ok((_, (components, _))) => return components,
+        Err(_) => {
+            tracing::error!("Error with parsing substring {:?}", snippet_string);
+            Vec::new()
+        }
     }
+    //} else {
 }
 
 fn sp<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
