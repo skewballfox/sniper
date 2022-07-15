@@ -4,7 +4,8 @@
     are allowed to be missing during deserialization so that the base syntax is
     compatible with existing vscode snippets
 */
-use serde::{Deserialize};
+use crate::util::sniper_proto::SnippetInfo;
+use serde::Deserialize;
 //these are the currently (planned) supported actions for snippets
 #[derive(Deserialize, Clone, Debug)]
 #[serde(tag = "action", content = "args")]
@@ -23,20 +24,19 @@ pub enum SnippetTypes {
     Template,
 }
 
-//TODO: consider implementing snippet as a type rather than a struct
-// would be combined with a match at runtime to execute appropriate behavior
+///The snippet that is deserialized from the file, contains data that will be
 #[derive(Deserialize, Clone, Debug)]
-pub struct Snippet {
+pub struct RawSnippet {
     #[serde(with = "serde_bytes")]
     pub(crate) prefix: Vec<u8>,
     #[serde(rename = "type", default = "default_snippet_type")]
-    snippet_type: SnippetTypes,
+    pub(crate) snippet_type: SnippetTypes,
     pub(crate) body: Vec<String>,
     pub(crate) description: String,
     #[serde(default = "unconditional")]
-    is_conditional: bool,
+    pub(crate) is_conditional: bool,
     #[serde(default = "no_action")]
-    actions: Vec<Actions>,
+    pub(crate) actions: Vec<Actions>,
     //TODO: remove once fully migrated to incremental parsing
     #[serde(default = "assembly_required")]
     pub(crate) requires_assembly: bool,
@@ -66,7 +66,31 @@ fn currently_empty() -> Vec<(usize, usize, usize)> {
 #[derive(Deserialize, Clone, Debug)]
 pub struct Loader {
     #[serde(flatten, with = "tuple_vec_map")]
-    pub(crate) snippets: Vec<(String, Snippet)>,
+    pub(crate) snippets: Vec<(String, RawSnippet)>,
+}
+/// WIP all the content of RawSnippet that isn't needed when requesting
+/// a snippet. Only differs from SnippetInfo by the addition of prefix,
+/// which is necessary when constructing new Targets that employ existing sets
+#[derive(Debug, Clone)]
+pub(crate) struct SnippetMetadata {
+    pub(crate) prefix: Vec<u8>,
+    pub(crate) name: String,
+    pub(crate) description: String,
+}
+
+impl SnippetMetadata {
+    pub(crate) fn to_snippet_info(self) -> (Vec<u8>, SnippetInfo) {
+        return (
+            self.prefix,
+            SnippetInfo {
+                name: self.name,
+                description: self.description,
+            },
+        );
+    }
+    pub(crate) fn get_name(&self) -> String {
+        return self.name.clone();
+    }
 }
 
 /// tracks the set each group of snippets belong to, as well as
@@ -74,12 +98,12 @@ pub struct Loader {
 /// to add or drop a group of snippets
 #[derive(Debug)]
 pub struct SnippetSet {
-    pub(crate) contents: Vec<String>,
+    pub(crate) contents: Vec<SnippetMetadata>,
     target_counter: i32,
 }
 
 impl SnippetSet {
-    pub(crate) fn new(contents: Vec<String>) -> Self {
+    pub(crate) fn new(contents: Vec<SnippetMetadata>) -> Self {
         Self {
             contents,
             target_counter: 1,
