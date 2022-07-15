@@ -18,8 +18,8 @@ use tonic::Status;
 //use sniper_common::service::SnippetInfo;
 
 use crate::{
-    parser::ComponentType,
-    snippet::{Loader, Snippet, SnippetSet},
+    parser::Token,
+    snippet::{Loader, RawSnippet, SnippetMetadata, SnippetSet},
     target::TargetData,
     util::sniper_proto::{
         snippet_component::Component, Functor, SnippetComponent, SnippetInfo, Tabstop,
@@ -32,7 +32,7 @@ use std::{borrow::Cow, sync::Arc};
 pub struct SnippetManager {
     /// The keys are (language, snippet_name), the value is the struct containing
     /// the deserialized snippet
-    pub(crate) snippets: Arc<DashMap<(String, String), Snippet>>,
+    pub(crate) snippets: Arc<DashMap<(String, String), String>>,
     /// The keys are (language, set_name),  the set_name should correspond
     /// to the file name, or some way map to it elsewhere. The value is a
     /// struct with a vector of strings corresponding to the second half
@@ -42,7 +42,7 @@ pub struct SnippetManager {
 
 impl SnippetManager {
     pub fn new(
-        snippets: Arc<DashMap<(String, String), Snippet>>,
+        snippets: Arc<DashMap<(String, String), String>>,
         snippet_sets: Arc<DashMap<(String, String), SnippetSet>>,
     ) -> Self {
         Self {
@@ -61,9 +61,21 @@ impl SnippetManager {
     ) {
         println!("loading started");
         let temp: Loader = serde_json::from_str(snippet_data.into()).unwrap();
-        let mut snippet_set: Vec<String> = Vec::with_capacity(temp.snippets.len());
-
+        let mut snippet_set: Vec<SnippetMetadata> = Vec::with_capacity(temp.snippets.len());
+        //TODO: Consider moving to hashmap with drain
+        //https://doc.rust-lang.org/stable/std/collections/struct.HashMap.html#method.drain
         for (snippet_key, snippet) in temp.snippets.iter() {
+            let RawSnippet {
+                prefix,
+                snippet_type,
+                body,
+                description,
+                is_conditional,
+                actions,
+                requires_assembly,
+                tabstops,
+            } = snippet;
+
             target.triggers.insert(
                 snippet.prefix.clone(),
                 SnippetInfo {
@@ -71,12 +83,15 @@ impl SnippetManager {
                     description: snippet.description.clone(),
                 },
             );
+            let contents = body.join("\n");
+            self.snippets
+                .insert((language.to_string(), snippet_key.to_owned()), contents);
 
-            self.snippets.insert(
-                (language.to_string(), snippet_key.to_owned()),
-                snippet.to_owned(),
-            );
-            snippet_set.push(snippet_key.to_owned());
+            snippet_set.push(SnippetMetadata {
+                prefix: prefix.to_owned(),
+                description: description.to_owned(),
+                name: snippet_key.to_owned(),
+            });
         }
         self.snippet_sets.insert(
             (language.into(), snip_set_name.into()),
@@ -85,6 +100,8 @@ impl SnippetManager {
         target.loaded_snippets.insert(snip_set_name.into());
     }
 
+    ///Returns a list of triggers associated with a snippet set, to be used when
+    /// getting completions for a particular target
     pub fn triggers(
         &self,
         language: String,
@@ -96,27 +113,11 @@ impl SnippetManager {
             .contents
             .clone() //TODO: figure out how to avoid cloning
             .into_iter()
-            .map(move |s| {
-                (
-                    self.snippets
-                        .get(&(language.clone(), s.clone()))
-                        .unwrap()
-                        .prefix
-                        .clone(),
-                    SnippetInfo {
-                        name: s.clone(),
-                        description: self
-                            .snippets
-                            .get(&(language.clone(), s.clone()))
-                            .unwrap()
-                            .description
-                            .clone(),
-                    },
-                )
-            })
+            .map(move |s| s.to_snippet_info())
     }
+
     pub fn unload(&self, language: &str, snip_set_to_drop: &str) {
-        for snippet_key in self
+        for snippet_data in self
             .snippet_sets
             .get(&(language.into(), snip_set_to_drop.into()))
             .unwrap()
@@ -124,7 +125,7 @@ impl SnippetManager {
             .iter()
         {
             self.snippets
-                .remove(&(language.to_string(), snippet_key.to_string()));
+                .remove(&(language.to_string(), snippet_data.get_name()));
         }
         self.snippet_sets
             .remove(&(language.into(), snip_set_to_drop.into()));
@@ -150,28 +151,27 @@ impl SnippetManager {
 fn chamber(
     language: &String,
     snippet_name: String,
-    ammo: ReadOnlyView<(String, String), Snippet>,
+    ammo: ReadOnlyView<(String, String), String>,
     mut tab_offset: i32,
     tx: &Sender<Result<SnippetComponent, Status>>,
 ) -> i32 {
     tracing::debug!("starting chamber for {:?}", snippet_name);
     let snippet_key = &(language.into(), snippet_name.into());
-    let mut tokens: Vec<ComponentType> = Vec::new();
+    let mut tokens: Vec<Token> = Vec::new();
 
     let mut tab_count = 0;
 
     if let Some(snippet) = ammo.get(snippet_key) {
         tracing::debug!("snippet found: {:#?}", snippet);
-        let content = Cow::from(snippet.body.clone());
-        let mut tmp: Vec<ComponentType>;
-        for i in 0..content.len() {
-            tmp = crate::parser::snippet_component(&content[i]);
-            if tmp.len() == 0 {
-                tracing::error!("error encountered while parsing snippet: {:?}", snippet_key)
-            }
-            tracing::debug!("produced tokens {:?}", tmp);
-            tokens.append(&mut tmp);
+        let content = Cow::from(snippet.clone());
+        let mut tmp: Vec<Token>;
+
+        tmp = crate::parser::snippet_component(&content);
+        if tmp.len() == 0 {
+            tracing::error!("error encountered while parsing snippet: {:?}", snippet_key)
         }
+        tracing::debug!("produced tokens {:?}", tmp);
+        tokens.append(&mut tmp);
     } else {
         return 0;
     }
@@ -179,8 +179,8 @@ fn chamber(
     for token in tokens {
         tracing::debug!("processing token {:#?}", token);
         match token {
-            ComponentType::ReadyComponent(component) => discharge(component, tx),
-            ComponentType::Tabstop(number, args) => {
+            Token::ReadyComponent(component) => discharge(component, tx),
+            Token::Tabstop(number, args) => {
                 //handle args
                 //TODO: rework when adding support for placeholders that aren't just raw text
                 let content = args
@@ -198,7 +198,7 @@ fn chamber(
                 );
                 tab_count += 1;
             }
-            ComponentType::Snippet(sub_snip) => {
+            Token::Snippet(sub_snip) => {
                 let mut sub_offset = tab_offset + tab_count;
                 sub_offset = chamber(language, sub_snip, ammo.clone(), sub_offset, tx);
 

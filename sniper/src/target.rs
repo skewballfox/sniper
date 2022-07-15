@@ -25,7 +25,7 @@ pub struct TargetData {
     //should these go here?
     pub(crate) loaded_snippets: DashSet<String>,
     //disabled_snippets: DashSet<String>,
-    //NOTE: probably unnecessary to track this here, given SnippetSets tracks dependant targets
+    //NOTE: probably unnecessary to track this here, given SnippetSets tracks dependent targets
     pub(crate) triggers: Trie<Vec<u8>, SnippetInfo>,
 }
 
@@ -36,7 +36,6 @@ impl TargetData {
             loaded_snippets: DashSet::new(),
             triggers: Trie::new(),
             //should these go here?
-            //snippet_triggers: DashMap::new(),
             //disabled_snippets: DashSet::new(),
         }
     }
