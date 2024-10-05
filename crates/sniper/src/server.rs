@@ -22,8 +22,9 @@ use sniper_common::sniper_proto::{
     sniper_server::Sniper as SniperService, CompletionsRequest, CompletionsResponse, SnippetInfo,
     TargetRequest, Void,
 };
-pub(crate) type Stream<T> =
-    std::pin::Pin<Box<dyn tokio_stream::Stream<Item = std::result::Result<T, Status>> + Send>>;
+
+// pub(crate) type Stream<T> =
+//     std::pin::Pin<Box<dyn tokio_stream::Stream<Item = std::result::Result<T, Status>> + Send>>;
 
 pub type SniperResponse<T> = Result<Response<T>, Status>;
 #[derive(Clone)]
@@ -102,9 +103,7 @@ impl SniperService for Sniper {
                     }
                 });
 
-            let _ = &self
-                .targets
-                .insert((session_id, uri), target_data);
+            let _ = &self.targets.insert((session_id, uri), target_data);
             //should only track a target if it is in a supported language
             //should have some way of mitigating request for adding nonviable targets
             //client side

@@ -8,6 +8,7 @@ use serde::Deserialize;
 use sniper_common::sniper_proto::SnippetInfo;
 //these are the currently (planned) supported actions for snippets
 #[derive(Deserialize, Clone, Debug)]
+#[allow(dead_code)]
 #[serde(tag = "action", content = "args")]
 pub enum Actions {
     Load(Vec<String>),

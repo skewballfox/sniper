@@ -67,13 +67,9 @@ impl SnippetManager {
         for (snippet_key, snippet) in temp.snippets.iter() {
             let RawSnippet {
                 prefix,
-                snippet_type,
                 body,
                 description,
-                is_conditional,
-                actions,
-                requires_assembly,
-                tabstops,
+                ..
             } = snippet;
 
             target.triggers.insert(
@@ -141,10 +137,10 @@ impl SnippetManager {
         tx: Sender<Result<SnippetComponent, Status>>,
     ) {
         let ammo = (*self.snippets).clone().into_read_only();
-        let offset = 0;
+
         chamber(&language, snippet_name, ammo, 0, &tx);
         tracing::debug!("closing component producer");
-        tx.closed();
+        //cgitx.closed();
     }
 }
 
