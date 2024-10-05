@@ -2,10 +2,10 @@
     This is a "client" built entirely for testing the functionality of the server. Eventually as the server
     becomes more developed, I'm hoping to also use this for stress testing with multiple client request going at once.
 */
-pub mod sniper_proto {
-    tonic::include_proto!("sniper");
-}
-use crate::sniper_proto::{
+
+use futures::TryFutureExt;
+use hyper_util::rt::tokio::TokioIo;
+use sniper_common::sniper_proto::{
     sniper_client::SniperClient, CompletionsRequest, SnippetRequest, TargetRequest,
 };
 use tokio::net::UnixStream;
@@ -19,7 +19,7 @@ use tower::service_fn;
 #[tokio::main]
 pub async fn main() -> anyhow::Result<()> {
     // Bind a server socket
-    init_tracing("Sniper Test Client")?;
+    sniper_common::init_tracing("Sniper Test Client").expect("failed to initialize tracing");
 
     tracing::info!("Hello from sniper client!");
     let session_id = "12345".to_string();
@@ -27,7 +27,7 @@ pub async fn main() -> anyhow::Result<()> {
     let language = "python".to_string();
 
     let mut client = init_client("/tmp/sniper.socket".to_string()).await;
-
+    println!("client: {:#?}", client);
     tracing::info!("client: {:#?}", client);
 
     //first lets add "new session" to the servers list of targets
@@ -38,7 +38,7 @@ pub async fn main() -> anyhow::Result<()> {
         language,
     });
 
-    client.add_target(target_request).await;
+    let _ = client.add_target(target_request).await;
 
     //tracing::info!("{:#?}", snippet.await);
 
@@ -82,35 +82,10 @@ pub async fn init_client(socket_path: String) -> SniperClient<Channel> {
     let channel = Endpoint::try_from("http://[::]:50051")
         .unwrap()
         .connect_with_connector(service_fn(move |_: Uri| {
-            UnixStream::connect(socket_path.clone())
+            UnixStream::connect(socket_path.clone()).map_ok(TokioIo::new)
         }))
         .await
         .unwrap();
-    SniperClient::new(channel)
-}
-/// Initializes an OpenTelemetry tracing subscriber with a Jaeger backend.
-pub fn init_tracing(service_name: &str) -> anyhow::Result<()> {
-    println!("initializing tracer");
-    std::env::set_var("OTEL_BSP_MAX_EXPORT_BATCH_SIZE", "12");
 
-    let tracer = opentelemetry_jaeger::new_pipeline()
-        .with_service_name(service_name)
-        .with_max_packet_size(2usize.pow(13))
-        .install_batch(opentelemetry::runtime::Tokio)?;
-    println!("tracer initialized {:#?}", tracer);
-    tracing_subscriber::util::SubscriberInitExt::try_init(
-        tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt::with(
-            tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt::with(
-                tracing_subscriber::registry(),
-                tracing_subscriber::fmt::layer().with_span_events(
-                    tracing_subscriber::fmt::format::FmtSpan::NEW
-                        | tracing_subscriber::fmt::format::FmtSpan::CLOSE,
-                ),
-            ),
-            tracing_opentelemetry::layer().with_tracer(tracer),
-        ),
-    )
-    .expect("error initializing tracer");
-    println!("tracer registered");
-    Ok(())
+    SniperClient::new(channel)
 }

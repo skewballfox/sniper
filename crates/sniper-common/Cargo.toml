@@ -1,0 +1,29 @@
+[package]
+name = "sniper-common"
+version = { workspace = true }
+authors = ["Joshua Ferguson <joshua.ferguson.273@gmail.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+#[build-dependencies]
+
+
+[dependencies]
+anyhow = { workspace = true }
+serde = { workspace = true }
+#TODO: put these behind a feature flag
+tracing = { workspace = true }
+tonic = { workspace = true }
+opentelemetry = { workspace = true }
+tracing-opentelemetry = { workspace = true }
+opentelemetry_sdk = { workspace = true }
+opentelemetry-otlp = { workspace = true }
+opentelemetry-semantic-conventions = { workspace = true }
+tracing-subscriber = { workspace = true }
+prost = { workspace = true }
+prost-types = { workspace = true }
+
+[build-dependencies]
+tonic-build = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+#prost-build = "0.9.0"

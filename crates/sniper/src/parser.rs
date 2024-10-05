@@ -24,7 +24,7 @@ use nom::{
     IResult,
 };
 
-use crate::util::sniper_proto::{snippet_component::Component, Functor, Tabstop};
+use sniper_common::sniper_proto::{snippet_component::Component, Functor, Tabstop};
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Token {
@@ -227,7 +227,7 @@ fn snippet_object(snippet_string: &str) -> IResult<&str, Token> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::util::sniper_proto::SnippetComponent;
+    use sniper_common::sniper_proto::SnippetComponent;
     struct Snips {
         ifv: Vec<String>,
         elifv: Vec<String>,

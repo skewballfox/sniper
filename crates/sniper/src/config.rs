@@ -40,21 +40,24 @@ struct Loader {
     pub(crate) language_settings: HashMap<String, LanguageConfig>,
 }
 
+pub fn get_config_path() -> PathBuf {
+    BaseDirs::new()
+        .unwrap()
+        .config_dir()
+        .join(PathBuf::from(&"sniper"))
+}
+
 impl SniperConfig {
     //TODO: need to add an option to set the path to the config dir when called
-    pub fn new() -> Self {
-        let path = BaseDirs::new()
-            .unwrap()
-            .config_dir()
-            .join(PathBuf::from(&"sniper"));
-        let toml_file = &path.join("config.toml");
+    pub fn new(config_path: PathBuf) -> Self {
+        let toml_file = &config_path.join("config.toml");
         println!("{:?}", toml_file);
         println!("config file loaded: {:?}", toml_file);
         let toml_data = fs::read_to_string(&toml_file).expect("failed to load file");
         let temp: Loader = toml::from_str(&toml_data).unwrap();
 
         Self {
-            config_path: PathBuf::from(path),
+            config_path,
             languages: temp.language_settings,
         }
     }

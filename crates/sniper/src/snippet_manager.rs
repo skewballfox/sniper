@@ -21,9 +21,10 @@ use crate::{
     parser::Token,
     snippet::{Loader, RawSnippet, SnippetMetadata, SnippetSet},
     target::TargetData,
-    util::sniper_proto::{
-        snippet_component::Component, Functor, SnippetComponent, SnippetInfo, Tabstop,
-    },
+};
+
+use sniper_common::sniper_proto::{
+    snippet_component::Component, Functor, SnippetComponent, SnippetInfo, Tabstop,
 };
 
 use std::{borrow::Cow, sync::Arc};

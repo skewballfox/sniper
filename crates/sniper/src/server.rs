@@ -5,7 +5,7 @@
 
 */
 use dashmap::DashMap;
-use tonic::codegen::futures_core;
+use tonic::codegen::tokio_stream;
 
 use std::sync::Arc;
 use std::thread;
@@ -14,16 +14,16 @@ use tokio_stream::wrappers::ReceiverStream;
 
 use tonic::{Request, Response, Status};
 
-use crate::util::sniper_proto::{SnippetComponent, SnippetRequest};
+use sniper_common::sniper_proto::{SnippetComponent, SnippetRequest};
 
 use crate::{config::SniperConfig, snippet_manager::SnippetManager, target::TargetData};
 
-use crate::util::sniper_proto::{
+use sniper_common::sniper_proto::{
     sniper_server::Sniper as SniperService, CompletionsRequest, CompletionsResponse, SnippetInfo,
     TargetRequest, Void,
 };
 pub(crate) type Stream<T> =
-    std::pin::Pin<Box<dyn futures_core::Stream<Item = std::result::Result<T, Status>> + Send>>;
+    std::pin::Pin<Box<dyn tokio_stream::Stream<Item = std::result::Result<T, Status>> + Send>>;
 
 pub type SniperResponse<T> = Result<Response<T>, Status>;
 #[derive(Clone)]

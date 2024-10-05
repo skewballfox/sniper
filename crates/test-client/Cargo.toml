@@ -1,0 +1,32 @@
+[package]
+name = "sniper-client"
+version = { workspace = true }
+authors = ["Joshua Ferguson <joshua.ferguson.273@gmail.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+#[build-dependencies]
+#[[bin]]
+
+
+[dependencies]
+sniper-common = { path = "../sniper-common" }
+futures = { workspace = true }
+anyhow = { workspace = true }
+tokio = { workspace = true, features = [
+    "net",
+    "macros",
+    "rt-multi-thread",
+] } #NOTE: more features may be added (as required)
+tokio-util = { workspace = true, features = ["codec", "net"] }
+hyper-util = { workspace = true, features = ["tokio"] }
+tonic = { workspace = true }
+prost = { workspace = true }
+prost-types = { workspace = true }
+tower = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+tracing = { workspace = true, features = ["max_level_debug"] }
+
+opentelemetry = { workspace = true }
+
+tracing-subscriber = { workspace = true }

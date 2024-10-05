@@ -7,9 +7,9 @@
    set of languages) and
 */
 
-use crate::util::sniper_proto::SnippetInfo;
 use dashmap::DashSet;
 use qp_trie::Trie;
+use sniper_common::sniper_proto::SnippetInfo;
 
 //use std::hash::{Hash,Hasher};
 //NOTE: may not be necessary, may wind up getting rid of this

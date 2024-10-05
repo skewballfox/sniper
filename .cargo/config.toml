@@ -1,0 +1,5 @@
+[alias]
+server = "run -p sniper-server -- --config-path ${TEST_CONFIG_PATH}"
+
+[env]
+TEST_CONFIG_PATH = { value = "config", relative = true }
