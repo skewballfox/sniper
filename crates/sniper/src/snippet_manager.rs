@@ -11,7 +11,6 @@
 */
 use dashmap::{DashMap, ReadOnlyView};
 
-use rayon::iter::ParallelIterator;
 use tokio::sync::mpsc::Sender;
 use tonic::Status;
 
@@ -24,7 +23,7 @@ use crate::{
 };
 
 use sniper_common::sniper_proto::{
-    snippet_component::Component, Functor, SnippetComponent, SnippetInfo, Tabstop,
+    snippet_component::Component, SnippetComponent, SnippetInfo, Tabstop,
 };
 
 use std::{borrow::Cow, sync::Arc};
@@ -61,7 +60,7 @@ impl SnippetManager {
         target: &mut TargetData,
     ) {
         println!("loading started");
-        let temp: Loader = serde_json::from_str(snippet_data.into()).unwrap();
+        let temp: Loader = serde_json::from_str(snippet_data).unwrap();
         let mut snippet_set: Vec<SnippetMetadata> = Vec::with_capacity(temp.snippets.len());
         //TODO: Consider moving to hashmap with drain
         //https://doc.rust-lang.org/stable/std/collections/struct.HashMap.html#method.drain
@@ -142,7 +141,7 @@ impl SnippetManager {
         tx: Sender<Result<SnippetComponent, Status>>,
     ) {
         let ammo = (*self.snippets).clone().into_read_only();
-        let mut offset = 0;
+        let offset = 0;
         chamber(&language, snippet_name, ammo, 0, &tx);
         tracing::debug!("closing component producer");
         tx.closed();
@@ -157,7 +156,7 @@ fn chamber(
     tx: &Sender<Result<SnippetComponent, Status>>,
 ) -> i32 {
     tracing::debug!("starting chamber for {:?}", snippet_name);
-    let snippet_key = &(language.into(), snippet_name.into());
+    let snippet_key = &(language.into(), snippet_name);
     let mut tokens: Vec<Token> = Vec::new();
 
     let mut tab_count = 0;
@@ -168,7 +167,7 @@ fn chamber(
         let mut tmp: Vec<Token>;
 
         tmp = crate::parser::snippet_component(&content);
-        if tmp.len() == 0 {
+        if tmp.is_empty() {
             tracing::error!("error encountered while parsing snippet: {:?}", snippet_key)
         }
         tracing::debug!("produced tokens {:?}", tmp);
@@ -225,5 +224,5 @@ fn discharge(component: Component, tx: &Sender<Result<SnippetComponent, Status>>
     //just found out why get_snippet wasn't working
     //TODO: replace with something lock free as this is being called asynchronously
     tx.blocking_send(Ok(round))
-        .expect(&format!("failed to send component {:?}", component));
+        .unwrap_or_else(|_| panic!("failed to send component {:?}", component));
 }

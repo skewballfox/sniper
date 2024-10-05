@@ -1,5 +1,4 @@
 use std::io::Result;
-use tonic_build;
 
 fn main() -> Result<()> {
     tonic_build::configure()
@@ -9,6 +8,6 @@ fn main() -> Result<()> {
             ".sniper.SnippetInfo",
             "#[derive(serde::Serialize, serde::Deserialize)]",
         )
-        .compile(&["../../proto/sniper.proto"], &["../../proto"])?;
+        .compile_protos(&["../../proto/sniper.proto"], &["../../proto"])?;
     Ok(())
 }

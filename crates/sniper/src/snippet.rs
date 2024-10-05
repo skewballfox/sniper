@@ -80,16 +80,16 @@ pub(crate) struct SnippetMetadata {
 
 impl SnippetMetadata {
     pub(crate) fn to_snippet_info(self) -> (Vec<u8>, SnippetInfo) {
-        return (
+        (
             self.prefix,
             SnippetInfo {
                 name: self.name,
                 description: self.description,
             },
-        );
+        )
     }
     pub(crate) fn get_name(&self) -> String {
-        return self.name.clone();
+        self.name.clone()
     }
 }
 

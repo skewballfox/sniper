@@ -40,7 +40,7 @@ impl TargetData {
         }
     }
     pub fn get_language(self) -> String {
-        return self.language.clone();
+        self.language.clone()
     }
 }
 

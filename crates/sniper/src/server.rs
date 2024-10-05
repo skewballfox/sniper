@@ -85,7 +85,7 @@ impl SniperService for Sniper {
                     {
                         //if the snippet set is currently untracked, load the base set of snippets
                         //for the targets language
-                        let snippet_data = self.config.get_snippet_data(&language, &snippet_set);
+                        let snippet_data = self.config.get_snippet_data(&language, snippet_set);
                         snippet_manager.load(
                             &language,
                             &snippet_set.to_string(),
@@ -104,7 +104,7 @@ impl SniperService for Sniper {
 
             let _ = &self
                 .targets
-                .insert((session_id.into(), uri.into()), target_data);
+                .insert((session_id, uri), target_data);
             //should only track a target if it is in a supported language
             //should have some way of mitigating request for adding nonviable targets
             //client side

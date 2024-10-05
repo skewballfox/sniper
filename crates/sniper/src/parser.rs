@@ -15,11 +15,11 @@ use nom::{
     },
     character::{
         complete::alpha0,
-        complete::{alpha1, alphanumeric1, char, digit1},
+        complete::{alphanumeric1, char, digit1},
     },
-    combinator::{complete, eof, iterator, map, map_res, opt},
+    combinator::{complete, eof, map, map_res, opt},
     error::ParseError,
-    multi::{fold_many0, fold_many1, many_till, separated_list1},
+    multi::{many_till, separated_list1},
     sequence::{delimited, pair, preceded},
     IResult,
 };
@@ -43,7 +43,7 @@ pub(crate) fn snippet_component(snippet_string: &str) -> Vec<Token> {
     let res = complete(many_till(alt((text, non_text_token)), eof))(snippet_string);
 
     match res {
-        Ok((_, (components, _))) => return components,
+        Ok((_, (components, _))) => components,
         Err(_) => {
             tracing::error!("Error with parsing substring {:?}", snippet_string);
             Vec::new()
@@ -134,13 +134,13 @@ fn nested_variable(snippet_string: &str) -> IResult<&str, Token> {
         })),
     )(snippet_string)?;
 
-    return Ok((
+    Ok((
         snippet_string,
         Token::ReadyComponent(Component::Var(Functor {
             name: res.into(),
             transform: args,
         })),
-    ));
+    ))
 }
 
 ///used for basic tabstops which don't have optional arguments
@@ -200,7 +200,7 @@ fn placeholder_text(snippet_string: &str) -> IResult<&str, Component> {
         |c| c == '$' || c == '}', //|| c == '|' || c == ','
     )(snippet_string)?;
 
-    return Ok((snippet_string, Component::Text(snip_component.to_string())));
+    Ok((snippet_string, Component::Text(snip_component.to_string())))
 }
 
 ///Used for the names of snippets, may be extended to take arguments for those snippets

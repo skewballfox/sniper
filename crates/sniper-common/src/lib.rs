@@ -6,8 +6,6 @@ use opentelemetry_sdk::{
 };
 use opentelemetry_semantic_conventions::resource::SERVICE_NAME;
 
-use tracing::span;
-use tracing_subscriber::FmtSubscriber;
 pub mod sniper_proto {
     tonic::include_proto!("sniper");
 }
@@ -37,7 +35,7 @@ pub fn init_tracing(service_name: &str) -> anyhow::Result<()> {
     global::set_tracer_provider(tracer_provider);
     let txt = tracing_subscriber::FmtSubscriber::new();
     tracing::subscriber::set_global_default(txt)?;
-    let tracer = global::tracer("sniper");
+    //global::tracer("sniper");
 
     println!("tracer registered");
     Ok(())

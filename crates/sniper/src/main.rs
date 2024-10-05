@@ -62,11 +62,11 @@ fn create_listener_stream(path: &str) -> Result<UnixListenerStream, std::io::Err
     std::fs::create_dir_all(
         Path::new(path)
             .parent()
-            .expect(&format!("could not get parent path from {:?}", path)),
+            .unwrap_or_else(|| panic!("could not get parent path from {:?}", path)),
     );
     //create a lister on the specified socket
     let listener =
-        UnixListener::bind(path).expect(&format!("failed to bind Listener to path: {:?}", path));
+        UnixListener::bind(path).unwrap_or_else(|_| panic!("failed to bind Listener to path: {:?}", path));
     Ok(UnixListenerStream::new(listener))
 }
 

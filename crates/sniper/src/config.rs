@@ -53,7 +53,7 @@ impl SniperConfig {
         let toml_file = &config_path.join("config.toml");
         println!("{:?}", toml_file);
         println!("config file loaded: {:?}", toml_file);
-        let toml_data = fs::read_to_string(&toml_file).expect("failed to load file");
+        let toml_data = fs::read_to_string(toml_file).expect("failed to load file");
         let temp: Loader = toml::from_str(&toml_data).unwrap();
 
         Self {
@@ -68,9 +68,9 @@ impl SniperConfig {
         let snip_path = self.config_path.to_str().unwrap().to_owned()
             + "/"
             + language
-            + &"/"
+            + "/"
             + snippet_set
-            + &".json";
+            + ".json";
         println!("{:?}", snip_path);
         fs::read_to_string(&snip_path).unwrap()
     }
