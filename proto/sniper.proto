@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package sniper;
+
+service Sniper {
+  rpc AddTarget(TargetRequest) returns (Void);
+  rpc DropTarget(TargetRequest) returns (Void);
+
+  rpc GetCompletions(CompletionsRequest) returns (CompletionsResponse);
+  
+  // I know removing things from a proto is a big nono, but no one should be using this right now anyway
+  // and I can't fix this until I get GetSnippet working 
+  //rpc GetCompletionsStream(stream CompletionsRequest)
+  //    returns (stream CompletionsResponse);
+
+  rpc GetSnippet(SnippetRequest) returns (stream SnippetComponent);
+}
+
+message SnippetInfo {
+  string name = 1;
+  string description = 2;
+}
+
+message SnippetComponent {
+  oneof component {
+    string text = 1;
+    Tabstop tabstop = 2;
+    Functor var = 3;
+  }
+}
+
+message Tabstop {
+  int32 number = 1;
+  repeated SnippetComponent content = 2;
+}
+
+// same as variables in the vscode snipptet syntax, but trying to do two things:
+// 1. rethink the syntax to support programmatic snippets
+// 2. avoid hardcoding support for a set of variables
+// A functor is a thing which may take arguments transforms each step(keystroke)
+// until devolving to regular text
+message Functor {
+  string name = 1; 
+  optional string transform = 2; 
+}
+
+message CompletionsRequest {
+  string session_id = 1;
+  string uri = 2;
+  bytes user_input = 3;
+}
+
+message CompletionsResponse { repeated SnippetInfo completions = 1; }
+
+message TargetRequest {
+  string session_id = 1;
+  string uri = 2;
+  string language = 3;
+}
+
+message Void {}
+
+message SnippetRequest {
+  string session_id = 1;
+  string uri = 2;
+  string snippet_name = 3;
+}
+
+
+// TODO
+// message FunctorRequest {}
